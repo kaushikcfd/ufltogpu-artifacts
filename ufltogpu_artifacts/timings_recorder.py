@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import enum
 import logging
 import sqlite3 as sql
 from datetime import datetime
@@ -9,32 +8,10 @@ from typing import Sequence
 
 import pytz
 
+from .core import Op
+
 
 logger = logging.getLogger(__name__)
-
-
-@enum.unique
-class Op(enum.Enum):
-    MASS = 0
-    LAPLACE = 1
-    HELMHOLTZ = 2
-    ELASTICITY = 3
-    HYPERELASTICITY = 4
-
-
-def op_name(op: Op) -> str:
-    if op == Op.MASS:
-        return "Mass"
-    elif op == Op.LAPLACE:
-        return "Laplace"
-    elif op == Op.HELMHOLTZ:
-        return "Helmholtz"
-    elif op == Op.ELASTICITY:
-        return "Elasticity"
-    elif op == Op.HYPERELASTICITY:
-        return "Hyperelasticity"
-    else:
-        raise AssertionError("unreachable")
 
 
 def create_or_verify_db(
@@ -131,6 +108,18 @@ def record_runtime(
     cursor.commit()
 
 
+def _get_nel1d(dim: int) -> int:
+    if dim == 2:
+        return 256
+    elif dim == 3:
+        1/0
+    else:
+        raise NotImplementedError
+
+
+
+
+
 def main(
     *,
     conn: sql.Connection,
@@ -145,10 +134,16 @@ def main(
         for op in operators:
             for p in range(p_lo, p_hi+1):
                 t_op = get_runtime_in_s(op=op, dim=dim, p=p)
-                flops = get_flops()
-                add_or_replace_row()
-        ...
-    raise NotImplementedError("Not yet implemented.")
+                record_runtime(
+                    cursor=cursor,
+                    op=op,
+                    dim=dim,
+                    p=p,
+                    num_cells=num_cells,
+                    runtime_in_s=t_op,
+                )
+
+    conn.close()
 
 
 if __name__ == "__main__":

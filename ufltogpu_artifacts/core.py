@@ -1,0 +1,298 @@
+from __future__ import annotations
+
+import enum
+
+
+__doc__ = """
+.. data:: flops_per_cell
+
+    A mapping from ``(Operator, dim, degree)`` to number of floating point
+    operations required to compute the corresponding action for one cell in the
+    mesh.
+
+.. data:: arithmetic_intensity
+
+    A mapping from ``(Operator, dim, degree)`` to number of FLOP-arithmetic
+    intensity required to compute the corresponding action.
+
+.. data:: fs_by_f_ratio
+
+    A mapping from ``(Operator, dim, degree)`` to number of ratio of
+      FLOP-arithmetic
+    intensity required to compute the corresponding action.
+"""
+
+
+@enum.unique
+class Op(enum.Enum):
+    MASS = 0
+    LAPLACE = 1
+    HELMHOLTZ = 2
+    ELASTICITY = 3
+    HYPERELASTICITY = 4
+
+
+def op_name(op: Op) -> str:
+    if op == Op.MASS:
+        return "Mass"
+    elif op == Op.LAPLACE:
+        return "Laplace"
+    elif op == Op.HELMHOLTZ:
+        return "Helmholtz"
+    elif op == Op.ELASTICITY:
+        return "Elasticity"
+    elif op == Op.HYPERELASTICITY:
+        return "Hyperelasticity"
+    else:
+        raise AssertionError("unreachable")
+
+flops_per_cell = {
+    (Op.MASS, 2, 1): 49,
+    (Op.MASS, 2, 2): 166,
+    (Op.MASS, 2, 3): 514,
+    (Op.MASS, 2, 4): 1560,
+    (Op.MASS, 2, 5): 3106,
+    (Op.MASS, 2, 6): 5596,
+    (Op.MASS, 2, 7): 9354,
+    (Op.MASS, 2, 8): 14752,
+    (Op.MASS, 3, 1): 101,
+    (Op.MASS, 3, 2): 617,
+    (Op.MASS, 3, 3): 1997,
+    (Op.MASS, 3, 4): 17779,
+    (Op.MASS, 3, 5): 48845,
+    (Op.MASS, 3, 6): 115963,
+
+    (Op.LAPLACE, 2, 1): 47,
+    (Op.LAPLACE, 2, 2): 206,
+    (Op.LAPLACE, 2, 3): 587,
+    (Op.LAPLACE, 2, 4): 1637,
+    (Op.LAPLACE, 2, 5): 4592,
+    (Op.LAPLACE, 2, 6): 8621,
+    (Op.LAPLACE, 2, 7): 14864,
+    (Op.LAPLACE, 2, 8): 24017,
+    (Op.LAPLACE, 3, 1): 128,
+    (Op.LAPLACE, 3, 2): 682,
+    (Op.LAPLACE, 3, 3): 3902,
+    (Op.LAPLACE, 3, 4): 10962,
+    (Op.LAPLACE, 3, 5): 88316,
+    (Op.LAPLACE, 3, 6): 225138,
+
+    (Op.HELMHOLTZ, 2, 1): 91,
+    (Op.HELMHOLTZ, 2, 2): 545,
+    (Op.HELMHOLTZ, 2, 3): 1649,
+    (Op.HELMHOLTZ, 2, 4): 4917,
+    (Op.HELMHOLTZ, 2, 5): 9665,
+    (Op.HELMHOLTZ, 2, 6): 17265,
+    (Op.HELMHOLTZ, 2, 7): 28689,
+    (Op.HELMHOLTZ, 2, 8): 45053,
+    (Op.HELMHOLTZ, 3, 1): 207,
+    (Op.HELMHOLTZ, 3, 2): 2796,
+    (Op.HELMHOLTZ, 3, 3): 8586,
+    (Op.HELMHOLTZ, 3, 4): 74441,
+    (Op.HELMHOLTZ, 3, 5): 201162,
+    (Op.HELMHOLTZ, 3, 6): 473063,
+
+    (Op.ELASTICITY, 2, 1): 93,
+    (Op.ELASTICITY, 2, 2): 444,
+    (Op.ELASTICITY, 2, 3): 1251,
+    (Op.ELASTICITY, 2, 4): 3441,
+    (Op.ELASTICITY, 2, 5): 9546,
+    (Op.ELASTICITY, 2, 6): 17769,
+    (Op.ELASTICITY, 2, 7): 30450,
+    (Op.ELASTICITY, 2, 8): 48981,
+    (Op.ELASTICITY, 3, 1): 305,
+    (Op.ELASTICITY, 3, 2): 2131,
+    (Op.ELASTICITY, 3, 3): 12311,
+    (Op.ELASTICITY, 3, 4): 34011,
+    (Op.ELASTICITY, 3, 5): 271325,
+    (Op.ELASTICITY, 3, 6): 686523,
+
+    (Op.HYPERELASTICITY, 2, 1): 184,
+    (Op.HYPERELASTICITY, 2, 2): 1667,
+    (Op.HYPERELASTICITY, 2, 3): 9292,
+    (Op.HYPERELASTICITY, 2, 4): 24076,
+    (Op.HYPERELASTICITY, 2, 5): 51452,
+    (Op.HYPERELASTICITY, 2, 6): 97180,
+    (Op.HYPERELASTICITY, 2, 7): 168172,
+    (Op.HYPERELASTICITY, 2, 8): 272492,
+    (Op.HYPERELASTICITY, 3, 1): 598,
+    (Op.HYPERELASTICITY, 3, 2): 13717,
+    (Op.HYPERELASTICITY, 3, 3): 189442,
+    (Op.HYPERELASTICITY, 3, 4): 797542,
+    (Op.HYPERELASTICITY, 3, 5): 2521678,
+    (Op.HYPERELASTICITY, 3, 6): 6616468,
+}
+
+
+arithmetic_intensity = {
+    (Op.MASS, 2, 1): 1.4728190677468591,
+    (Op.MASS, 2, 2): 1.7655905937097511,
+    (Op.MASS, 2, 3): 3.009904613765812,
+    (Op.MASS, 2, 4): 5.662030538896687,
+    (Op.MASS, 2, 5): 7.607719318388396,
+    (Op.MASS, 2, 6): 9.834460317569285,
+    (Op.MASS, 2, 7): 12.344122604889968,
+    (Op.MASS, 2, 8): 15.137716102085562,
+    (Op.MASS, 3, 1): 4.076907157569009,
+    (Op.MASS, 3, 2): 6.570092316011408,
+    (Op.MASS, 3, 3): 9.428834575762432,
+    (Op.MASS, 3, 4): 42.08706406848798,
+    (Op.MASS, 3, 5): 64.79658795413597,
+    (Op.MASS, 3, 6): 93.97651143415028,
+
+    (Op.LAPLACE, 2, 1): 1.4127040037571914,
+    (Op.LAPLACE, 2, 2): 2.1910341102663176,
+    (Op.LAPLACE, 2, 3): 3.437381339067182,
+    (Op.LAPLACE, 2, 4): 5.941502559085818,
+    (Op.LAPLACE, 2, 5): 11.247471703167905,
+    (Op.LAPLACE, 2, 6): 15.150622301244603,
+    (Op.LAPLACE, 2, 7): 19.615462732422973,
+    (Op.LAPLACE, 2, 8): 24.644965267339273,
+    (Op.LAPLACE, 3, 1): 5.166773427414189,
+    (Op.LAPLACE, 3, 2): 7.262241425477764,
+    (Op.LAPLACE, 3, 3): 18.42329119410366,
+    (Op.LAPLACE, 3, 4): 25.949625756159808,
+    (Op.LAPLACE, 3, 5): 117.15785570186249,
+    (Op.LAPLACE, 3, 6): 182.4520220351468,
+
+    (Op.HELMHOLTZ, 2, 1): 2.7352354115298816,
+    (Op.HELMHOLTZ, 2, 2): 5.796667913083219,
+    (Op.HELMHOLTZ, 2, 3): 9.656289315369307,
+    (Op.HELMHOLTZ, 2, 4): 17.846284717791672,
+    (Op.HELMHOLTZ, 2, 5): 23.673086674894993,
+    (Op.HELMHOLTZ, 2, 6): 30.34166500765434,
+    (Op.HELMHOLTZ, 2, 7): 37.859796174009865,
+    (Op.HELMHOLTZ, 2, 8): 46.23098722527528,
+    (Op.HELMHOLTZ, 3, 1): 8.355641402146384,
+    (Op.HELMHOLTZ, 3, 2): 29.77306015489124,
+    (Op.HELMHOLTZ, 3, 3): 40.538795026287545,
+    (Op.HELMHOLTZ, 3, 4): 176.21931134047549,
+    (Op.HELMHOLTZ, 3, 5): 266.85661226389396,
+    (Op.HELMHOLTZ, 3, 6): 383.3706477805286,
+
+    (Op.ELASTICITY, 2, 1): 2.020366598778004,
+    (Op.ELASTICITY, 2, 2): 3.093403004572175,
+    (Op.ELASTICITY, 2, 3): 4.451462248415434,
+    (Op.ELASTICITY, 2, 4): 7.313010559872485,
+    (Op.ELASTICITY, 2, 5): 13.406714944042132,
+    (Op.ELASTICITY, 2, 6): 17.671255865991235,
+    (Op.ELASTICITY, 2, 7): 22.538338768995906,
+    (Op.ELASTICITY, 2, 8): 28.01265347702536,
+    (Op.ELASTICITY, 3, 1): 9.0916236081799,
+    (Op.ELASTICITY, 3, 2): 13.239518142464075,
+    (Op.ELASTICITY, 3, 3): 28.326045363595203,
+    (Op.ELASTICITY, 3, 4): 35.93238238648762,
+    (Op.ELASTICITY, 3, 5): 153.05852005183908,
+    (Op.ELASTICITY, 3, 6): 229.6756301749538,
+
+    (Op.HYPERELASTICITY, 2, 1): 3.5382411916356347,
+    (Op.HYPERELASTICITY, 2, 2): 9.71979821223117,
+    (Op.HYPERELASTICITY, 2, 3): 26.77502093340972,
+    (Op.HYPERELASTICITY, 2, 4): 40.7445297255106,
+    (Op.HYPERELASTICITY, 2, 5): 56.96919581076694,
+    (Op.HYPERELASTICITY, 2, 6): 75.70030971691632,
+    (Op.HYPERELASTICITY, 2, 7): 97.06295458001951,
+    (Op.HYPERELASTICITY, 2, 8): 121.12489391503543,
+    (Op.HYPERELASTICITY, 3, 1): 15.764103433221814,
+    (Op.HYPERELASTICITY, 3, 2): 70.53125334104394,
+    (Op.HYPERELASTICITY, 3, 3): 346.9455553373771,
+    (Op.HYPERELASTICITY, 3, 4): 659.9028269435761,
+    (Op.HYPERELASTICITY, 3, 5): 1104.9708284817311,
+    (Op.HYPERELASTICITY, 3, 6): 1711.1546348984596,
+}
+
+
+fs_by_f_ratios = {
+    (Op.MASS, 2, 1): 0.7959183673469388,
+    (Op.MASS, 2, 2): 0.8470588235294118,
+    (Op.MASS, 2, 3): 0.9266409266409267,
+    (Op.MASS, 2, 4): 0.959079283887468,
+    (Op.MASS, 2, 5): 0.9723472668810289,
+    (Op.MASS, 2, 6): 0.98,
+    (Op.MASS, 2, 7): 0.9848258174823681,
+    (Op.MASS, 2, 8): 0.9880726484142044,
+    (Op.MASS, 3, 1): 0.6336633663366337,
+    (Op.MASS, 3, 2): 0.9076175040518638,
+    (Op.MASS, 3, 3): 0.9614421632448673,
+    (Op.MASS, 3, 4): 0.9843073288711401,
+    (Op.MASS, 3, 5): 0.9905619817790972,
+    (Op.MASS, 3, 6): 0.9938342402317981,
+
+    (Op.LAPLACE, 2, 1): 0.255319148,
+    (Op.LAPLACE, 2, 2): 0.6857142857142857,
+    (Op.LAPLACE, 2, 3): 0.8121827411167513,
+    (Op.LAPLACE, 2, 4): 0.8775137111517367,
+    (Op.LAPLACE, 2, 5): 0.9138381201044387,
+    (Op.LAPLACE, 2, 6): 0.9349565217391305,
+    (Op.LAPLACE, 2, 7): 0.9491525423728814,
+    (Op.LAPLACE, 2, 8): 0.9591607343574372,
+    (Op.LAPLACE, 3, 1): 0.1875,
+    (Op.LAPLACE, 3, 2): 0.7038123167155426,
+    (Op.LAPLACE, 3, 3): 0.8610968733982574,
+    (Op.LAPLACE, 3, 4): 0.9195402298850575,
+    (Op.LAPLACE, 3, 5): 0.9511300330630916,
+    (Op.LAPLACE, 3, 6): 0.9670868533965834,
+
+    (Op.HELMHOLTZ, 2, 1): 0.56043956,
+    (Op.HELMHOLTZ, 2, 2): 0.7868852459016393,
+    (Op.HELMHOLTZ, 2, 3): 0.8711433756805808,
+    (Op.HELMHOLTZ, 2, 4): 0.9144482828693355,
+    (Op.HELMHOLTZ, 2, 5): 0.9382562829661806,
+    (Op.HELMHOLTZ, 2, 6): 0.9533846777462505,
+    (Op.HELMHOLTZ, 2, 7): 0.9635799672393963,
+    (Op.HELMHOLTZ, 2, 8): 0.9707703575471069,
+    (Op.HELMHOLTZ, 3, 1): 0.4444444444444444,
+    (Op.HELMHOLTZ, 3, 2): 0.8011444921316166,
+    (Op.HELMHOLTZ, 3, 3): 0.8944793850454228,
+    (Op.HELMHOLTZ, 3, 4): 0.9403420158246127,
+    (Op.HELMHOLTZ, 3, 5): 0.9620902556148776,
+    (Op.HELMHOLTZ, 3, 6): 0.9744833140617635,
+
+    (Op.ELASTICITY, 2, 1): 0.258064516,
+    (Op.ELASTICITY, 2, 2): 0.6428571428571429,
+    (Op.ELASTICITY, 2, 3): 0.7649402390438247,
+    (Op.ELASTICITY, 2, 4): 0.8359941944847605,
+    (Op.ELASTICITY, 2, 5): 0.8795811518324608,
+    (Op.ELASTICITY, 2, 6): 0.9074438755415518,
+    (Op.ELASTICITY, 2, 7): 0.9267748079070073,
+    (Op.ELASTICITY, 2, 8): 0.940696131468817,
+    (Op.ELASTICITY, 3, 1): 0.236065573,
+    (Op.ELASTICITY, 3, 2): 0.675739089629282,
+    (Op.ELASTICITY, 3, 3): 0.8187799528876615,
+    (Op.ELASTICITY, 3, 4): 0.889124106906589,
+    (Op.ELASTICITY, 3, 5): 0.9287754537915783,
+    (Op.ELASTICITY, 3, 6): 0.9514378979291298,
+
+    (Op.HYPERELASTICITY, 2, 1): 0.13043782,
+    (Op.HYPERELASTICITY, 2, 2): 0.5023255813953489,
+    (Op.HYPERELASTICITY, 2, 3): 0.6317784563546383,
+    (Op.HYPERELASTICITY, 2, 4): 0.7207943447881339,
+    (Op.HYPERELASTICITY, 2, 5): 0.7834948661356875,
+    (Op.HYPERELASTICITY, 2, 6): 0.8284209346632299,
+    (Op.HYPERELASTICITY, 2, 7): 0.8613039656931852,
+    (Op.HYPERELASTICITY, 2, 8): 0.8859010488630936,
+    (Op.HYPERELASTICITY, 3, 1): 0.120401337,
+    (Op.HYPERELASTICITY, 3, 2): 0.5511409200262448,
+    (Op.HYPERELASTICITY, 3, 3): 0.7126191657604967,
+    (Op.HYPERELASTICITY, 3, 4): 0.8128349353388286,
+    (Op.HYPERELASTICITY, 3, 5): 0.8742178819024475,
+    (Op.HYPERELASTICITY, 3, 6): 0.912483216120746
+}
+
+
+def get_roofline_flops(op: Op, dim: int, deg: int, dev_name: str) -> float:
+    if dev_name == "TITANV":
+        fpeak = 6144  # GFlops/s
+        beta_peak_global = 653  # GB/s
+        beta_peak_shared = 13800  # GB/s
+    elif dev_name == "TeslaK40c":
+        fpeak = 1430  # GFlops/s
+        beta_peak_global = 288  # GB/s
+        beta_peak_shared = 1000  # GB/s
+    else:
+        raise ValueError(f"Unknown device {dev_name}.")
+
+    AI_global = arithmetic_intensity[(prob.upper(), cell_type, fem_space, deg)]
+    Fs_to_F = fs_by_f_ratios[(prob.upper(), cell_type, fem_space, deg)]
+    AI_local = 0.25 / Fs_to_F
+    return min(AI_global * beta_peak_global, AI_local * beta_peak_shared, fpeak)
