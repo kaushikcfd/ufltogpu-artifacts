@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import enum
+from firedrake import UnitSquareMesh, UnitCubeMesh
 
 
 __doc__ = """

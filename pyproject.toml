@@ -76,6 +76,7 @@ extend-ignore = [
   "E265",
   "N802",
   "E402",
+  "N806",
   "N814",
   "N817",
   "C90",
@@ -96,7 +97,7 @@ allowed-confusables = [
 "examples/*.py" = ["I002"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["firedrake", "PyOP2", "loopy"]
+known-first-party = ["firedrake", "PyOP2", "ufl", "loopy"]
 known-local-folder = ["ufltogpu_artifacts"]
 lines-after-imports = 2
 combine-as-imports = true

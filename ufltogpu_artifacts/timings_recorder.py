@@ -8,7 +8,8 @@ from typing import Sequence
 
 import pytz
 
-from .core import Op
+from ufltogpu_artifacts.core import Op, op_name
+from ufltogpu_artifacts.weak_forms import get_bilinear_form
 
 
 logger = logging.getLogger(__name__)
@@ -64,20 +65,59 @@ def create_or_verify_db(
     return conn
 
 
-def get_runtime_in_s(*, op: Op, dim: int, p: int, num_cells: int) -> float:
+def get_runtime_in_s(*, op: Op, dim: int, p: int, nel_1d: int) -> float:
     """
     Returns the average runtime of applying operator *op* in dimension *dim*
-    with polynomial discretization function spaces of degree *p*.
+    with polynomial discretization function spaces of degree *p*. The spatial
+    discretization is a tesselated cube in *dim*-dimensions.
     """
+    import pyop2.op2 as op2
+
+    from firedrake import Function, action
+    op2.configuration.reconfigure(gpu_strategy="auto_tiling")
+
+    A, V = get_bilinear_form(nel_1d, dim, op, p)
+    x = Function(V)
+    x_ref = Function(V)
+    y = Function(V)
+    expr = action(A, V)
+
+    with offloading():
+        ...
+
     raise NotImplementedError
 
 
-def get_flops(*, op: Op, dim: int, p: int, num_cells: int) -> float:
+def get_flops(*, op: Op, dim: int, p: int, nel_1d: int) -> float:
     """
     Returns the Floating-point operations of applying operator *op* in dimension
     *dim* with polynomial discretization function spaces of degree *p*.
     """
     raise NotImplementedError
+
+
+def _get_nel1d(dim: int) -> int:
+    if dim == 2:
+        return 256
+    elif dim == 3:
+        raise NotImplementedError
+    else:
+        raise NotImplementedError
+
+
+def _get_num_cells(dim: int, nel_1d: int) -> int:
+    """
+    Returns the number of cells with a hypercube in *dim*-dimensions with
+    *nel_1d+1* vertices along each edge of the cube. We choose Firedrake's
+    "UnitCubeMesh" spatial discretization for computing the total number
+    of cells in the mesh.
+    """
+    if dim == 2:
+        return 2 * nel_1d * nel_1d
+    elif dim == 3:
+        return 6 * nel_1d * nel_1d * nel_1d
+    else:
+        raise ValueError(f"{dim=}")
 
 
 def record_runtime(
@@ -87,11 +127,11 @@ def record_runtime(
     Returns the Floating-point operations of applying operator *op* in dimension
     *dim* with polynomial discretization function spaces of degree *p*.
     """
-    device_name = 1/0
+    device_name = 1 / 0
 
-    timestamp = (datetime
-                 .now(pytz.timezone("America/Chicago"))
-                 .strftime("%Y_%m_%d_%H%M%S"))
+    timestamp = datetime.now(pytz.timezone("America/Chicago")).strftime(
+        "%Y_%m_%d_%H%M%S"
+    )
 
     cursor.execute(
         "INSERT INTO AUTOTILING_TIMES"
@@ -108,18 +148,6 @@ def record_runtime(
     cursor.commit()
 
 
-def _get_nel1d(dim: int) -> int:
-    if dim == 2:
-        return 256
-    elif dim == 3:
-        1/0
-    else:
-        raise NotImplementedError
-
-
-
-
-
 def main(
     *,
     conn: sql.Connection,
@@ -130,10 +158,11 @@ def main(
 ) -> None:
     cursor = conn.cursor()
     for dim in dims:
-        num_cells = 1 / 0
+        nel_1d = _get_nel1d(dim)
+        num_cells = _get_num_cells(dim, nel_1d)
         for op in operators:
-            for p in range(p_lo, p_hi+1):
-                t_op = get_runtime_in_s(op=op, dim=dim, p=p)
+            for p in range(p_lo, p_hi + 1):
+                t_op = get_runtime_in_s(op=op, dim=dim, p=p, nel1_d=nel_1d)
                 record_runtime(
                     cursor=cursor,
                     op=op,
