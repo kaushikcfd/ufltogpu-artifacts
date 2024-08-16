@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import enum
-from firedrake import UnitSquareMesh, UnitCubeMesh
+from functools import cache
 
 
 __doc__ = """
@@ -33,6 +33,12 @@ class Op(enum.Enum):
     HYPERELASTICITY = 4
 
 
+@enum.unique
+class Device(enum.Enum):
+    K40 = 0
+    TITANV = 1
+
+
 def op_name(op: Op) -> str:
     if op == Op.MASS:
         return "Mass"
@@ -46,6 +52,42 @@ def op_name(op: Op) -> str:
         return "Hyperelasticity"
     else:
         raise AssertionError("unreachable")
+
+
+def device_name(device: Device) -> str:
+    if device == Device.K40:
+        return "NVIDIA TESLA K40"
+    elif device == Device.TITANV:
+        return "NVIDIA TITAN V"
+    else:
+        raise AssertionError("unreachable")
+
+
+def name_to_op(name: str) -> Op:
+    name = name.capitalize()
+    for op in Op:
+        if op_name(op) == name:
+            return op
+    raise AssertionError("unreachable")
+
+
+def name_to_device(name: str) -> Device:
+    name = name.lower()
+    for dev in Device:
+        if device_name(dev).lower() == name:
+            return dev
+    raise AssertionError("unreachable")
+
+
+@cache
+def get_active_cuda_device_and_version() -> tuple[Device, str]:
+    import firedrake  # noqa: F401, I001 (import for PETSc to init ctx.)
+    from pycuda.autoprimaryctx import context
+    import pycuda.driver as cuda
+    return name_to_device(context.get_device().name()), ".".join(
+        str(v) for v in cuda.get_version()
+    )
+
 
 flops_per_cell = {
     (Op.MASS, 2, 1): 49,
@@ -62,7 +104,6 @@ flops_per_cell = {
     (Op.MASS, 3, 4): 17779,
     (Op.MASS, 3, 5): 48845,
     (Op.MASS, 3, 6): 115963,
-
     (Op.LAPLACE, 2, 1): 47,
     (Op.LAPLACE, 2, 2): 206,
     (Op.LAPLACE, 2, 3): 587,
@@ -77,7 +118,6 @@ flops_per_cell = {
     (Op.LAPLACE, 3, 4): 10962,
     (Op.LAPLACE, 3, 5): 88316,
     (Op.LAPLACE, 3, 6): 225138,
-
     (Op.HELMHOLTZ, 2, 1): 91,
     (Op.HELMHOLTZ, 2, 2): 545,
     (Op.HELMHOLTZ, 2, 3): 1649,
@@ -92,7 +132,6 @@ flops_per_cell = {
     (Op.HELMHOLTZ, 3, 4): 74441,
     (Op.HELMHOLTZ, 3, 5): 201162,
     (Op.HELMHOLTZ, 3, 6): 473063,
-
     (Op.ELASTICITY, 2, 1): 93,
     (Op.ELASTICITY, 2, 2): 444,
     (Op.ELASTICITY, 2, 3): 1251,
@@ -107,7 +146,6 @@ flops_per_cell = {
     (Op.ELASTICITY, 3, 4): 34011,
     (Op.ELASTICITY, 3, 5): 271325,
     (Op.ELASTICITY, 3, 6): 686523,
-
     (Op.HYPERELASTICITY, 2, 1): 184,
     (Op.HYPERELASTICITY, 2, 2): 1667,
     (Op.HYPERELASTICITY, 2, 3): 9292,
@@ -140,7 +178,6 @@ arithmetic_intensity = {
     (Op.MASS, 3, 4): 42.08706406848798,
     (Op.MASS, 3, 5): 64.79658795413597,
     (Op.MASS, 3, 6): 93.97651143415028,
-
     (Op.LAPLACE, 2, 1): 1.4127040037571914,
     (Op.LAPLACE, 2, 2): 2.1910341102663176,
     (Op.LAPLACE, 2, 3): 3.437381339067182,
@@ -155,7 +192,6 @@ arithmetic_intensity = {
     (Op.LAPLACE, 3, 4): 25.949625756159808,
     (Op.LAPLACE, 3, 5): 117.15785570186249,
     (Op.LAPLACE, 3, 6): 182.4520220351468,
-
     (Op.HELMHOLTZ, 2, 1): 2.7352354115298816,
     (Op.HELMHOLTZ, 2, 2): 5.796667913083219,
     (Op.HELMHOLTZ, 2, 3): 9.656289315369307,
@@ -170,7 +206,6 @@ arithmetic_intensity = {
     (Op.HELMHOLTZ, 3, 4): 176.21931134047549,
     (Op.HELMHOLTZ, 3, 5): 266.85661226389396,
     (Op.HELMHOLTZ, 3, 6): 383.3706477805286,
-
     (Op.ELASTICITY, 2, 1): 2.020366598778004,
     (Op.ELASTICITY, 2, 2): 3.093403004572175,
     (Op.ELASTICITY, 2, 3): 4.451462248415434,
@@ -185,7 +220,6 @@ arithmetic_intensity = {
     (Op.ELASTICITY, 3, 4): 35.93238238648762,
     (Op.ELASTICITY, 3, 5): 153.05852005183908,
     (Op.ELASTICITY, 3, 6): 229.6756301749538,
-
     (Op.HYPERELASTICITY, 2, 1): 3.5382411916356347,
     (Op.HYPERELASTICITY, 2, 2): 9.71979821223117,
     (Op.HYPERELASTICITY, 2, 3): 26.77502093340972,
@@ -218,7 +252,6 @@ fs_by_f_ratios = {
     (Op.MASS, 3, 4): 0.9843073288711401,
     (Op.MASS, 3, 5): 0.9905619817790972,
     (Op.MASS, 3, 6): 0.9938342402317981,
-
     (Op.LAPLACE, 2, 1): 0.255319148,
     (Op.LAPLACE, 2, 2): 0.6857142857142857,
     (Op.LAPLACE, 2, 3): 0.8121827411167513,
@@ -233,7 +266,6 @@ fs_by_f_ratios = {
     (Op.LAPLACE, 3, 4): 0.9195402298850575,
     (Op.LAPLACE, 3, 5): 0.9511300330630916,
     (Op.LAPLACE, 3, 6): 0.9670868533965834,
-
     (Op.HELMHOLTZ, 2, 1): 0.56043956,
     (Op.HELMHOLTZ, 2, 2): 0.7868852459016393,
     (Op.HELMHOLTZ, 2, 3): 0.8711433756805808,
@@ -248,7 +280,6 @@ fs_by_f_ratios = {
     (Op.HELMHOLTZ, 3, 4): 0.9403420158246127,
     (Op.HELMHOLTZ, 3, 5): 0.9620902556148776,
     (Op.HELMHOLTZ, 3, 6): 0.9744833140617635,
-
     (Op.ELASTICITY, 2, 1): 0.258064516,
     (Op.ELASTICITY, 2, 2): 0.6428571428571429,
     (Op.ELASTICITY, 2, 3): 0.7649402390438247,
@@ -263,7 +294,6 @@ fs_by_f_ratios = {
     (Op.ELASTICITY, 3, 4): 0.889124106906589,
     (Op.ELASTICITY, 3, 5): 0.9287754537915783,
     (Op.ELASTICITY, 3, 6): 0.9514378979291298,
-
     (Op.HYPERELASTICITY, 2, 1): 0.13043782,
     (Op.HYPERELASTICITY, 2, 2): 0.5023255813953489,
     (Op.HYPERELASTICITY, 2, 3): 0.6317784563546383,
@@ -277,23 +307,24 @@ fs_by_f_ratios = {
     (Op.HYPERELASTICITY, 3, 3): 0.7126191657604967,
     (Op.HYPERELASTICITY, 3, 4): 0.8128349353388286,
     (Op.HYPERELASTICITY, 3, 5): 0.8742178819024475,
-    (Op.HYPERELASTICITY, 3, 6): 0.912483216120746
+    (Op.HYPERELASTICITY, 3, 6): 0.912483216120746,
 }
 
 
-def get_roofline_flops(op: Op, dim: int, deg: int, dev_name: str) -> float:
-    if dev_name == "TITANV":
-        fpeak = 6144  # GFlops/s
-        beta_peak_global = 653  # GB/s
-        beta_peak_shared = 13800  # GB/s
-    elif dev_name == "TeslaK40c":
-        fpeak = 1430  # GFlops/s
-        beta_peak_global = 288  # GB/s
-        beta_peak_shared = 1000  # GB/s
-    else:
-        raise ValueError(f"Unknown device {dev_name}.")
+def get_roofline_flops(op: Op, dim: int, deg: int, device: Device) -> float:
+    # if device == Device.K40:
+    #     fpeak = 1430  # GFlops/s
+    #     beta_peak_global = 288  # GB/s
+    #     beta_peak_shared = 1000  # GB/s
+    # elif device == Device.TITANV:
+    #     fpeak = 6144  # GFlops/s
+    #     beta_peak_global = 653  # GB/s
+    #     beta_peak_shared = 13800  # GB/s
+    # else:
+    #     raise ValueError(f"Unknown device {dev_name}.")
 
-    AI_global = arithmetic_intensity[(prob.upper(), cell_type, fem_space, deg)]
-    Fs_to_F = fs_by_f_ratios[(prob.upper(), cell_type, fem_space, deg)]
-    AI_local = 0.25 / Fs_to_F
-    return min(AI_global * beta_peak_global, AI_local * beta_peak_shared, fpeak)
+    raise NotImplementedError("No idea what the heck is going on over here.")
+    # AI_global = arithmetic_intensity[(prob.upper(), cell_type, fem_space, deg)]
+    # Fs_to_F = fs_by_f_ratios[(prob.upper(), cell_type, fem_space, deg)]
+    # AI_local = 0.25 / Fs_to_F
+    # return min(AI_global * beta_peak_global, AI_local * beta_peak_shared, fpeak)

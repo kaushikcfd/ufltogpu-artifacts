@@ -31,6 +31,8 @@ classifiers = [
 ]
 dependencies = [
     "numpy",
+    "pytz",
+    "tabulate",
 ]
 
 [project.urls]
