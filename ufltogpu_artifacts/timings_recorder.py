@@ -17,6 +17,7 @@ from ufltogpu_artifacts.core import (
     device_name,
     flops_per_cell,
     get_active_cuda_device_and_version,
+    name_to_op,
     op_name,
 )
 from ufltogpu_artifacts.weak_forms import get_bilinear_form
@@ -218,7 +219,7 @@ def main(
         num_cells = _get_num_cells(dim, nel_1d)
         for op in operators:
             for p in range(p_lo, p_hi + 1):
-                t_op = get_runtime_in_s(op=op, dim=dim, p=p, nel1_d=nel_1d)
+                t_op = get_runtime_in_s(op=op, dim=dim, p=p, nel_1d=nel_1d)
                 nflops = get_flops(op=op, dim=dim, p=p, nel_1d=nel_1d)
                 timings_table.append(
                     (f"{op_name(op)}.{dim}D.P{p}", 1e-9 * (nflops / t_op))
@@ -233,7 +234,8 @@ def main(
                     runtime_in_s=t_op,
                 )
 
-            cursor.commit()
+            if cursor is not None:
+                cursor.commit()
 
     print(
         tabulate(timings_table, headers=("Operator", "GFLOPS"), tablefmt="fancy_grid")
@@ -306,12 +308,12 @@ if __name__ == "__main__":
         conn = create_or_verify_db(args.db_path)
 
     p_lo, p_hi = args.p_range
-    assert isinstance(args.p_lo, int) and isinstance(args.p_hi, int)
+    assert isinstance(p_lo, int) and isinstance(p_hi, int)
 
     main(
         conn=conn,
-        operators=args.op,
-        dims=args.dims,
-        p_lo=args.p_lo,
-        p_hi=args.p_hi,
+        operators=[name_to_op(o) for o in args.op],
+        dims=args.dim,
+        p_lo=p_lo,
+        p_hi=p_hi,
     )
