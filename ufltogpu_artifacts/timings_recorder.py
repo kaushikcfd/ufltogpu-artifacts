@@ -1,16 +1,20 @@
-from __future__ import annotations
+from __future__ import annotations  # noqa: I001
 
+# Disabled isort to init firedrake before anything else.
+
+import firedrake as fd
 import argparse
 import logging
 import sqlite3 as sql
 from datetime import datetime
-from typing import Sequence
+from typing import Any, Sequence
 
 import pytz
-from pyop2.backends.cuda import cuda_backend
 from tabulate import tabulate
 
-import firedrake as fd
+from pyop2.backends.cuda import cuda_backend
+from pyop2.op2 import AbstractParloop
+from pyop2.transforms.auto_tiling import AutotilingFallback
 
 from ufltogpu_artifacts.core import (
     Op,
@@ -21,6 +25,10 @@ from ufltogpu_artifacts.core import (
     op_name,
 )
 from ufltogpu_artifacts.weak_forms import get_bilinear_form
+
+import warnings
+
+warnings.filterwarnings("ignore", category=AutotilingFallback)
 
 
 fd.set_offloading_backend(cuda_backend)
@@ -79,6 +87,19 @@ def create_or_verify_db(
     return conn
 
 
+def _get_parloop_and_args(
+    assembler: fd.assemble.ParloopFormAssembler, out_func: fd.Function
+) -> tuple[AbstractParloop, Sequence[Any]]:
+    (parloop,) = assembler.parloops(out_func)
+    iterset_part = parloop.iterset.core_part
+    return parloop, (
+        parloop.comm,
+        iterset_part.offset,
+        iterset_part.size,
+        *parloop.arglist,
+    )
+
+
 def get_runtime_in_s(*, op: Op, dim: int, p: int, nel_1d: int) -> float:
     """
     Returns the average runtime of applying operator *op* in dimension *dim*
@@ -86,14 +107,13 @@ def get_runtime_in_s(*, op: Op, dim: int, p: int, nel_1d: int) -> float:
     discretization is a tesselated cube in *dim*-dimensions.
     """
     import pycuda.driver as cuda
-    import pyop2.op2 as op2
+
+    fd.parameters["pyop2_options"]["gpu_strategy"] = "auto_tiling"
 
     N_WARMUP = 5
-    NMIN_TIMING_ROUNDS = 40
-    NROUNDS_BATCH = 10
+    NMIN_TIMING_ROUNDS = 5000
+    NROUNDS_BATCH = 100
     NMIN_RUNTIME_IN_MS = 1000
-
-    op2.configuration.reconfigure(gpu_strategy="auto_tiling")
 
     A, V = get_bilinear_form(nel_1d, dim, op, p)
     x = fd.Function(V)
@@ -111,19 +131,23 @@ def get_runtime_in_s(*, op: Op, dim: int, p: int, nel_1d: int) -> float:
     assert l2_err < 1e-6
 
     with fd.offloading():
+        assembler = fd.get_assembler(expr)
+        assembler.assemble(tensor=y)
+        parloop, arglist = _get_parloop_and_args(assembler, y)
+
         for _ in range(N_WARMUP):
-            fd.assemble(expr, tensor=y)
+            parloop.global_kernel(*arglist)
 
         irounds = 0
         acc_runtime_in_ms = 0.0
 
-        while irounds < NMIN_TIMING_ROUNDS and acc_runtime_in_ms < NMIN_RUNTIME_IN_MS:
-
+        while irounds < NMIN_TIMING_ROUNDS or acc_runtime_in_ms < NMIN_RUNTIME_IN_MS:
+            y.zero()  # zero out to avoid any overflow issues.
             start_evt = cuda.Event()
             end_evt = cuda.Event()
             start_evt.record()
             for _ in range(NROUNDS_BATCH):
-                fd.assemble(expr, tensor=y)
+                parloop.global_kernel(*arglist)
             end_evt.record()
             end_evt.synchronize()
 
@@ -279,7 +303,7 @@ if __name__ == "__main__":
         "--dim",
         choices=[2, 3],
         type=int,
-        nargs="+",
+        nargs="*",
         help="Toplogical dimension on which the function spaces are to be defined.",
         required=True,
     )
@@ -288,9 +312,10 @@ if __name__ == "__main__":
         type=int,
         nargs=2,
         help=(
-            "Two integers of the form `--p_range X Y`. Operators corresponding to"
+            "Operators corresponding to"
             " polynomial degrees {X, X+1, ..., Y} are evaluated."
         ),
+        metavar=("X", "Y"),
         required=True,
     )
 
