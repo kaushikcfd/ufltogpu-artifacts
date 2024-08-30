@@ -4,13 +4,16 @@ This repository contains the necessary code to reproduce the results presented
 in the paper "[UFL-to-GPU: Near the Roofline](#)". Follow the steps below to
 reproduce the reported results.
 
-1. Install `firedrake` project.
+1. Install `firedrake` project as follows, noting that
+   several sub-packages use branches that deviate from
+   'mainline' Firedrake. Note that the bulk of the work
+   described in the paper exists on those branches.
     ```console
     > curl -O https://raw.githubusercontent.com/firedrakeproject/firedrake/gpu/scripts/firedrake-install
 
     > python3 firedrake-install --venv-name firedrake_gpu --minimal-petsc --no-package-manager --package-branch firedrake gpu --package-branch tsfc gpu --package-branch pyop2 auto_tiling --cuda --mpicc=/usr/bin/mpicc.mpich --mpicxx=/usr/bin/mpicxx.mpich --mpif90=/usr/bin/mpif90.mpich --mpiexec=/usr/bin/mpiexec.mpich
     ```
-2. Clone this repository and build it.
+4. Clone this repository and build it.
    ```console
 
    > git clone https://github.com/kaushikcfd/ufltogpu-artifacts
@@ -21,7 +24,7 @@ reproduce the reported results.
    > pip install -e .
    ```
 
-3. Run the experiments
+5. Run the experiments
    ```console
    > cd ufltogpu-artifacts
    > python timings_recorder.py \
