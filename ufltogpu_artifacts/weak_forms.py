@@ -39,7 +39,7 @@ def helmholtz(*, mesh: MeshGeometry, p: int) -> tuple[ufl.Form, ufl.FunctionSpac
     V = FunctionSpace(mesh, "CG", p)
     u = TrialFunction(V)
     v = TestFunction(V)
-    return dot(grad(v), grad(u)) - 1.0 * v * u, V
+    return (dot(grad(v), grad(u)) - 1.0 * v * u) * dx, V
 
 
 def elasticity(*, mesh: MeshGeometry, p: int) -> tuple[ufl.Form, ufl.FunctionSpace]:

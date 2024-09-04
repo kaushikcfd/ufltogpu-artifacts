@@ -99,7 +99,7 @@ allowed-confusables = [
 "examples/*.py" = ["I002"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["firedrake", "PyOP2", "ufl", "loopy"]
+known-first-party = ["firedrake", "PyOP2", "tsfc", "ufl", "loopy"]
 known-local-folder = ["ufltogpu_artifacts"]
 lines-after-imports = 2
 combine-as-imports = true
