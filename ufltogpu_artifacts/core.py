@@ -11,10 +11,10 @@ __doc__ = """
     operations required to compute the corresponding action for one cell in the
     mesh.
 
-.. data:: arithmetic_intensity
+.. data:: nfootprint_bytes
 
-    A mapping from ``(Operator, dim, degree)`` to number of FLOP-arithmetic
-    intensity required to compute the corresponding action.
+    A mapping from ``(Operator, dim, degree, num_cells)`` to footprint
+    bytes accessed by the corresponding action operator.
 
 .. data:: fs_by_f_ratio
 
@@ -162,80 +162,6 @@ flops_per_cell = {
     (Op.HYPERELASTICITY, 3, 6): 6616456,
 }
 
-arithmetic_intensity = {
-    (Op.MASS, 2, 1): 1.4728190677468591,
-    (Op.MASS, 2, 2): 1.7655905937097511,
-    (Op.MASS, 2, 3): 3.009904613765812,
-    (Op.MASS, 2, 4): 5.662030538896687,
-    (Op.MASS, 2, 5): 7.607719318388396,
-    (Op.MASS, 2, 6): 9.834460317569285,
-    (Op.MASS, 2, 7): 12.344122604889968,
-    (Op.MASS, 2, 8): 15.137716102085562,
-    (Op.MASS, 3, 1): 4.076907157569009,
-    (Op.MASS, 3, 2): 6.570092316011408,
-    (Op.MASS, 3, 3): 9.428834575762432,
-    (Op.MASS, 3, 4): 42.08706406848798,
-    (Op.MASS, 3, 5): 64.79658795413597,
-    (Op.MASS, 3, 6): 93.97651143415028,
-    (Op.LAPLACE, 2, 1): 1.4127040037571914,
-    (Op.LAPLACE, 2, 2): 2.1910341102663176,
-    (Op.LAPLACE, 2, 3): 3.437381339067182,
-    (Op.LAPLACE, 2, 4): 5.941502559085818,
-    (Op.LAPLACE, 2, 5): 11.247471703167905,
-    (Op.LAPLACE, 2, 6): 15.150622301244603,
-    (Op.LAPLACE, 2, 7): 19.615462732422973,
-    (Op.LAPLACE, 2, 8): 24.644965267339273,
-    (Op.LAPLACE, 3, 1): 5.166773427414189,
-    (Op.LAPLACE, 3, 2): 7.262241425477764,
-    (Op.LAPLACE, 3, 3): 18.42329119410366,
-    (Op.LAPLACE, 3, 4): 25.949625756159808,
-    (Op.LAPLACE, 3, 5): 117.15785570186249,
-    (Op.LAPLACE, 3, 6): 182.4520220351468,
-    (Op.HELMHOLTZ, 2, 1): 2.7352354115298816,
-    (Op.HELMHOLTZ, 2, 2): 5.796667913083219,
-    (Op.HELMHOLTZ, 2, 3): 9.656289315369307,
-    (Op.HELMHOLTZ, 2, 4): 17.846284717791672,
-    (Op.HELMHOLTZ, 2, 5): 23.673086674894993,
-    (Op.HELMHOLTZ, 2, 6): 30.34166500765434,
-    (Op.HELMHOLTZ, 2, 7): 37.859796174009865,
-    (Op.HELMHOLTZ, 2, 8): 46.23098722527528,
-    (Op.HELMHOLTZ, 3, 1): 8.355641402146384,
-    (Op.HELMHOLTZ, 3, 2): 29.77306015489124,
-    (Op.HELMHOLTZ, 3, 3): 40.538795026287545,
-    (Op.HELMHOLTZ, 3, 4): 176.21931134047549,
-    (Op.HELMHOLTZ, 3, 5): 266.85661226389396,
-    (Op.HELMHOLTZ, 3, 6): 383.3706477805286,
-    (Op.ELASTICITY, 2, 1): 2.020366598778004,
-    (Op.ELASTICITY, 2, 2): 3.093403004572175,
-    (Op.ELASTICITY, 2, 3): 4.451462248415434,
-    (Op.ELASTICITY, 2, 4): 7.313010559872485,
-    (Op.ELASTICITY, 2, 5): 13.406714944042132,
-    (Op.ELASTICITY, 2, 6): 17.671255865991235,
-    (Op.ELASTICITY, 2, 7): 22.538338768995906,
-    (Op.ELASTICITY, 2, 8): 28.01265347702536,
-    (Op.ELASTICITY, 3, 1): 9.0916236081799,
-    (Op.ELASTICITY, 3, 2): 13.239518142464075,
-    (Op.ELASTICITY, 3, 3): 28.326045363595203,
-    (Op.ELASTICITY, 3, 4): 35.93238238648762,
-    (Op.ELASTICITY, 3, 5): 153.05852005183908,
-    (Op.ELASTICITY, 3, 6): 229.6756301749538,
-    (Op.HYPERELASTICITY, 2, 1): 3.5382411916356347,
-    (Op.HYPERELASTICITY, 2, 2): 9.71979821223117,
-    (Op.HYPERELASTICITY, 2, 3): 26.77502093340972,
-    (Op.HYPERELASTICITY, 2, 4): 40.7445297255106,
-    (Op.HYPERELASTICITY, 2, 5): 56.96919581076694,
-    (Op.HYPERELASTICITY, 2, 6): 75.70030971691632,
-    (Op.HYPERELASTICITY, 2, 7): 97.06295458001951,
-    (Op.HYPERELASTICITY, 2, 8): 121.12489391503543,
-    (Op.HYPERELASTICITY, 3, 1): 15.764103433221814,
-    (Op.HYPERELASTICITY, 3, 2): 70.53125334104394,
-    (Op.HYPERELASTICITY, 3, 3): 346.9455553373771,
-    (Op.HYPERELASTICITY, 3, 4): 659.9028269435761,
-    (Op.HYPERELASTICITY, 3, 5): 1104.9708284817311,
-    (Op.HYPERELASTICITY, 3, 6): 1711.1546348984596,
-}
-
-
 fs_by_f_ratios = {
     (Op.MASS, 2, 1): 0.7959183673469388,
     (Op.MASS, 2, 2): 0.8470588235294118,
@@ -308,6 +234,107 @@ fs_by_f_ratios = {
     (Op.HYPERELASTICITY, 3, 5): 0.8742178819024475,
     (Op.HYPERELASTICITY, 3, 6): 0.912483216120746,
 }
+
+nfootprint_bytes = {
+    (Op.MASS, 2, 1, 524288): 16818216,
+    (Op.MASS, 2, 2, 524288): 48300072,
+    (Op.MASS, 2, 3, 524288): 88170536,
+    (Op.MASS, 2, 4, 524288): 142721064,
+    (Op.MASS, 2, 5, 524288): 211951656,
+    (Op.MASS, 2, 6, 524288): 295862312,
+    (Op.MASS, 2, 7, 524288): 394453032,
+    (Op.MASS, 2, 8, 524288): 507723816,
+    (Op.MASS, 3, 1, 196608): 4870704,
+    (Op.MASS, 3, 2, 196608): 18463536,
+    (Op.MASS, 3, 3, 196608): 41641008,
+    (Op.MASS, 3, 4, 196608): 83053872,
+    (Op.MASS, 3, 5, 196608): 148207152,
+    (Op.MASS, 3, 6, 196608): 242605872,
+    (Op.LAPLACE, 2, 1, 524288): 16818216,
+    (Op.LAPLACE, 2, 2, 524288): 48300072,
+    (Op.LAPLACE, 2, 3, 524288): 88170536,
+    (Op.LAPLACE, 2, 4, 524288): 142721064,
+    (Op.LAPLACE, 2, 5, 524288): 211951656,
+    (Op.LAPLACE, 2, 6, 524288): 295862312,
+    (Op.LAPLACE, 2, 7, 524288): 394453032,
+    (Op.LAPLACE, 2, 8, 524288): 507723816,
+    (Op.LAPLACE, 3, 1, 196608): 4870704,
+    (Op.LAPLACE, 3, 2, 196608): 18463536,
+    (Op.LAPLACE, 3, 3, 196608): 41641008,
+    (Op.LAPLACE, 3, 4, 196608): 83053872,
+    (Op.LAPLACE, 3, 5, 196608): 148207152,
+    (Op.LAPLACE, 3, 6, 196608): 242605872,
+    (Op.HELMHOLTZ, 2, 1, 524288): 16818216,
+    (Op.HELMHOLTZ, 2, 2, 524288): 48300072,
+    (Op.HELMHOLTZ, 2, 3, 524288): 88170536,
+    (Op.HELMHOLTZ, 2, 4, 524288): 142721064,
+    (Op.HELMHOLTZ, 2, 5, 524288): 211951656,
+    (Op.HELMHOLTZ, 2, 6, 524288): 295862312,
+    (Op.HELMHOLTZ, 2, 7, 524288): 394453032,
+    (Op.HELMHOLTZ, 2, 8, 524288): 507723816,
+    (Op.HELMHOLTZ, 3, 1, 196608): 4870704,
+    (Op.HELMHOLTZ, 3, 2, 196608): 18463536,
+    (Op.HELMHOLTZ, 3, 3, 196608): 41641008,
+    (Op.HELMHOLTZ, 3, 4, 196608): 83053872,
+    (Op.HELMHOLTZ, 3, 5, 196608): 148207152,
+    (Op.HELMHOLTZ, 3, 6, 196608): 242605872,
+    (Op.ELASTICITY, 2, 1, 524288): 23134272,
+    (Op.ELASTICITY, 2, 2, 524288): 73515072,
+    (Op.ELASTICITY, 2, 3, 524288): 144867392,
+    (Op.ELASTICITY, 2, 4, 524288): 243482688,
+    (Op.ELASTICITY, 2, 5, 524288): 369360960,
+    (Op.ELASTICITY, 2, 6, 524288): 522502208,
+    (Op.ELASTICITY, 2, 7, 524288): 702906432,
+    (Op.ELASTICITY, 2, 8, 524288): 910573632,
+    (Op.ELASTICITY, 3, 1, 196608): 6595680,
+    (Op.ELASTICITY, 3, 2, 196608): 31645536,
+    (Op.ELASTICITY, 3, 3, 196608): 85449312,
+    (Op.ELASTICITY, 3, 4, 196608): 186094944,
+    (Op.ELASTICITY, 3, 5, 196608): 348524640,
+    (Op.ELASTICITY, 3, 6, 196608): 587680608,
+    (Op.HYPERELASTICITY, 2, 1, 524288): 27344992,
+    (Op.HYPERELASTICITY, 2, 2, 524288): 90325088,
+    (Op.HYPERELASTICITY, 2, 3, 524288): 182665312,
+    (Op.HYPERELASTICITY, 2, 4, 524288): 310657120,
+    (Op.HYPERELASTICITY, 2, 5, 524288): 474300512,
+    (Op.HYPERELASTICITY, 2, 6, 524288): 673595488,
+    (Op.HYPERELASTICITY, 2, 7, 524288): 908542048,
+    (Op.HYPERELASTICITY, 2, 8, 524288): 1179140192,
+    (Op.HYPERELASTICITY, 3, 1, 196608): 7458184,
+    (Op.HYPERELASTICITY, 3, 2, 196608): 38236552,
+    (Op.HYPERELASTICITY, 3, 3, 196608): 107353480,
+    (Op.HYPERELASTICITY, 3, 4, 196608): 237615496,
+    (Op.HYPERELASTICITY, 3, 5, 196608): 448683400,
+    (Op.HYPERELASTICITY, 3, 6, 196608): 760217992,
+}
+
+
+def get_nel1d_for_reported_data(dim: int) -> int:
+    """
+    Returns the number of elements along each dimension of a unit
+    *dim*-dimension hypercube for the reported data in the paper.
+    """
+    if dim == 2:
+        return 512
+    elif dim == 3:
+        return 32
+    else:
+        raise NotImplementedError
+
+
+def get_num_cells(dim: int, nel_1d: int) -> int:
+    """
+    Returns the number of cells with a hypercube in *dim*-dimensions with
+    *nel_1d+1* vertices along each edge of the cube. We choose Firedrake's
+    "UnitCubeMesh" spatial discretization for computing the total number
+    of cells in the mesh.
+    """
+    if dim == 2:
+        return 2 * nel_1d * nel_1d
+    elif dim == 3:
+        return 6 * nel_1d * nel_1d * nel_1d
+    else:
+        raise ValueError(f"{dim=}")
 
 
 def get_roofline_flops(op: Op, dim: int, deg: int, device: Device) -> float:
