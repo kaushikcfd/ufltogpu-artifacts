@@ -1,11 +1,18 @@
-from __future__ import annotations
+from __future__ import annotations  # noqa: I001
 
 import numpy as np
 
 import firedrake as fd
+import pyop2.op2 as op2
 from tsfc import compile_form
 
-from ufltogpu_artifacts.core import Op, flops_per_cell
+from ufltogpu_artifacts.core import (
+    Op,
+    flops_per_cell,
+    get_nel1d_for_reported_data,
+    get_num_cells,
+    nfootprint_bytes,
+)
 from ufltogpu_artifacts.weak_forms import get_bilinear_form
 
 
@@ -70,6 +77,112 @@ def print_flops() -> None:
     print(black.format_file_contents(code, fast=False, mode=BLACK_MODE))
 
 
+def _get_parloop_nfootprint_bytes(p: op2.AbstractParloop) -> int:
+    from more_itertools import zip_equal
+
+    seen_maps: set[op2.Map] = set()
+    nbytes: list[int] = []
+    for arg, access in zip_equal(p.arguments, p.accesses):
+        # {{{ Arg's nbytes
+
+        if access == op2.READ:
+            nbytes.append(arg.data.nbytes)
+        elif access == op2.INC:
+            # Incrementing involves both reading and writing.
+            nbytes.append(2 * arg.data.nbytes)
+        else:
+            raise NotImplementedError(f"{access=}")
+
+        # }}}
+
+        # {{{ Arg's L2G maps' nbytes
+
+        for map_ in arg.maps:
+            if map_ not in seen_maps:
+                seen_maps.add(map_)
+                nbytes.append(map_._values.nbytes)
+        # }}}
+
+    assert len(nbytes) == len(p.arglist)
+    return sum(nbytes)
+
+
+def print_nfootprint_bytes() -> None:
+    """
+    Prints the :data:`ufltogpu_artifacts.flops_per_cell` as a python dict.
+    """
+    import black
+
+    BLACK_MODE = black.Mode(target_versions={black.TargetVersion.PY311}, line_length=84)
+
+    code = ""
+
+    code += "nfootprint_bytes = {\n"
+
+    for op in [
+        Op.MASS,
+        Op.LAPLACE,
+        Op.HELMHOLTZ,
+        Op.ELASTICITY,
+        Op.HYPERELASTICITY,
+    ]:
+        for dim in [2, 3]:
+            p_lo, p_hi = get_p_lo_hi(dim)
+            for p in range(p_lo, p_hi + 1):
+                nel_1d = get_nel1d_for_reported_data(dim)
+                num_cells = get_num_cells(dim, nel_1d)
+                A, V = get_bilinear_form(nel_1d, dim, op, p)
+                x = fd.Function(V)
+                y = fd.Function(V)
+                assembler = fd.get_assembler(fd.action(A, x))
+                (parloop,) = assembler.parloops(y)
+                nbytes = _get_parloop_nfootprint_bytes(parloop)
+                code += f"({op}, {dim}, {p}, {num_cells}): {nbytes},\n"
+        code += "\n"
+
+    code += "}"
+    print(black.format_file_contents(code, fast=False, mode=BLACK_MODE))
+
+
+def _get_nel1d_from_num_cells(dim: int, num_cells: int) -> int:
+    """
+    Returns the number of cells with a hypercube in *dim*-dimensions with
+    *nel_1d+1* vertices along each edge of the cube. We choose Firedrake's
+    "UnitCubeMesh" spatial discretization for computing the total number
+    of cells in the mesh.
+    """
+    if dim == 2:
+        return round((num_cells / 2) ** (1 / 2))
+    elif dim == 3:
+        return round((num_cells / 6) ** (1 / 3))
+    else:
+        raise ValueError(f"{dim=}")
+
+
+def verify_nfootprint_bytes() -> None:
+    """
+    Verifies the correctness of entries in
+    :data:`ufltogpu_artifacts.nfootprint_bytes`.
+    """
+    for (op, dim, p, num_cells), ref_nbytes in nfootprint_bytes.items():
+        nel_1d = _get_nel1d_from_num_cells(dim, num_cells)
+        A, V = get_bilinear_form(nel_1d, dim, op, p)
+        x = fd.Function(V)
+        y = fd.Function(V)
+        assembler = fd.get_assembler(fd.action(A, x))
+        (parloop,) = assembler.parloops(y)
+        empirical_nbytes = _get_parloop_nfootprint_bytes(parloop)
+        if np.testing.assert_array_equal(empirical_nbytes, ref_nbytes):
+            raise RuntimeError(
+                f"For {op=}, {dim=}, {p=}, {num_cells=}: "
+                f"Expected = {ref_nbytes}, Measured = {empirical_nbytes}"
+            )
+
+    print("Verified nfootprint_bytes for all reference values. ✨ 🦾 ✨")
+
+
 if __name__ == "__main__":
     # print_flops()
+    # print_nfootprint_bytes()
     verify_flops_per_cell()
+    verify_nfootprint_bytes()
