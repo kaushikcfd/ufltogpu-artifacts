@@ -23,6 +23,8 @@ from ufltogpu_artifacts.core import (
     get_active_cuda_device_and_version,
     name_to_op,
     op_name,
+    get_nel1d_for_reported_data,
+    get_num_cells
 )
 from ufltogpu_artifacts.weak_forms import get_bilinear_form
 
@@ -155,31 +157,8 @@ def get_runtime_in_s(*, op: Op, dim: int, p: int, nel_1d: int) -> float:
             acc_runtime_in_ms += end_evt.time_since(start_evt)
 
     mean_runtime_in_ms = acc_runtime_in_ms / irounds
+    print(f"Recorded, wall-time = {mean_runtime_in_ms} ms")
     return mean_runtime_in_ms * 1e-3
-
-
-def _get_nel1d(dim: int) -> int:
-    if dim == 2:
-        return 256
-    elif dim == 3:
-        raise NotImplementedError
-    else:
-        raise NotImplementedError
-
-
-def _get_num_cells(dim: int, nel_1d: int) -> int:
-    """
-    Returns the number of cells with a hypercube in *dim*-dimensions with
-    *nel_1d+1* vertices along each edge of the cube. We choose Firedrake's
-    "UnitCubeMesh" spatial discretization for computing the total number
-    of cells in the mesh.
-    """
-    if dim == 2:
-        return 2 * nel_1d * nel_1d
-    elif dim == 3:
-        return 6 * nel_1d * nel_1d * nel_1d
-    else:
-        raise ValueError(f"{dim=}")
 
 
 def get_flops(*, op: Op, dim: int, p: int, nel_1d: int) -> int:
@@ -187,7 +166,7 @@ def get_flops(*, op: Op, dim: int, p: int, nel_1d: int) -> int:
     Returns the Floating-point operations of applying operator *op* in dimension
     *dim* with polynomial discretization function spaces of degree *p*.
     """
-    return _get_num_cells(dim, nel_1d) * flops_per_cell[(op, dim, p)]
+    return get_num_cells(dim, nel_1d) * flops_per_cell[(op, dim, p)]
 
 
 def record_runtime(
@@ -239,8 +218,8 @@ def main(
     cursor = conn.cursor() if conn else None
 
     for dim in dims:
-        nel_1d = _get_nel1d(dim)
-        num_cells = _get_num_cells(dim, nel_1d)
+        nel_1d = get_nel1d_for_reported_data(dim)
+        num_cells = get_num_cells(dim, nel_1d)
         for op in operators:
             for p in range(p_lo, p_hi + 1):
                 t_op = get_runtime_in_s(op=op, dim=dim, p=p, nel_1d=nel_1d)
