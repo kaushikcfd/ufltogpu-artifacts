@@ -130,6 +130,32 @@ def create_or_verify_db(
     return conn
 
 
+def fetch_flops(
+    cursor: sql.Cursor,
+    device: Device,
+    op: Op,
+    dim: int,
+    degree: int,
+    num_cells: int,
+) -> float:
+    """
+    Returns the GFLOPS recorded in the SQL database active in *cursor* for
+    running the action operator *op* on the device *device*.
+    """
+    from .constants import flops_per_cell
+
+    cursor.execute(
+        "SELECT runtime_in_sec FROM AUTOTILING_TIMES WHERE (op = ?  AND dim = ? AND"
+        " degree = ? AND device_name = ? AND n_cells = ?);",
+        (op_name(op), dim, degree, device_name(device), num_cells),
+    )
+    runtimes = cursor.fetchall()
+    if len(runtimes) > 1:
+        raise NotImplementedError("Mulitple data points, not sure which to pick.")
+
+    return (1e-9 * flops_per_cell[(op, dim, degree)]) / runtimes
+
+
 def get_nel1d_for_reported_data(dim: int) -> int:
     """
     Returns the number of elements along each dimension of a unit
