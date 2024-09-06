@@ -24,7 +24,8 @@ from ufltogpu_artifacts.core import (
     name_to_op,
     op_name,
     get_nel1d_for_reported_data,
-    get_num_cells
+    get_num_cells,
+    get_roofline_gflops,
 )
 from ufltogpu_artifacts.weak_forms import get_bilinear_form
 
@@ -113,7 +114,7 @@ def get_runtime_in_s(*, op: Op, dim: int, p: int, nel_1d: int) -> float:
     fd.parameters["pyop2_options"]["gpu_strategy"] = "auto_tiling"
 
     N_WARMUP = 5
-    NMIN_TIMING_ROUNDS = 5000
+    NMIN_TIMING_ROUNDS = 1000
     NROUNDS_BATCH = 100
     NMIN_RUNTIME_IN_MS = 1000
 
@@ -157,7 +158,6 @@ def get_runtime_in_s(*, op: Op, dim: int, p: int, nel_1d: int) -> float:
             acc_runtime_in_ms += end_evt.time_since(start_evt)
 
     mean_runtime_in_ms = acc_runtime_in_ms / irounds
-    print(f"Recorded, wall-time = {mean_runtime_in_ms} ms")
     return mean_runtime_in_ms * 1e-3
 
 
@@ -214,7 +214,7 @@ def main(
     p_lo: int,
     p_hi: int,
 ) -> None:
-    timings_table: list[tuple[str, float]] = []
+    timings_table: list[tuple[str, float, float]] = []
     cursor = conn.cursor() if conn else None
 
     for dim in dims:
@@ -224,8 +224,15 @@ def main(
             for p in range(p_lo, p_hi + 1):
                 t_op = get_runtime_in_s(op=op, dim=dim, p=p, nel_1d=nel_1d)
                 nflops = get_flops(op=op, dim=dim, p=p, nel_1d=nel_1d)
+                roofline_gflops = get_roofline_gflops(
+                    op, dim, p, num_cells, get_active_cuda_device_and_version()[0]
+                )
                 timings_table.append(
-                    (f"{op_name(op)}.{dim}D.P{p}", 1e-9 * (nflops / t_op))
+                    (
+                        f"{op_name(op)}.{dim}D.P{p}",
+                        1e-9 * (nflops / t_op),
+                        roofline_gflops,
+                    )
                 )
 
                 record_runtime(
@@ -241,7 +248,11 @@ def main(
                 cursor.commit()
 
     print(
-        tabulate(timings_table, headers=("Operator", "GFLOPS"), tablefmt="fancy_grid")
+        tabulate(
+            timings_table,
+            headers=("Operator", "GFLOPS", "Roofline\nGFLOPS"),
+            tablefmt="fancy_grid",
+        )
     )
 
 
