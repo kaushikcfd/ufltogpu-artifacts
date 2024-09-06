@@ -1,5 +1,6 @@
 from __future__ import annotations  # noqa: I001
 
+import argparse
 import numpy as np
 
 import firedrake as fd
@@ -257,9 +258,7 @@ def verify_local_nbytes_accesses_per_cell() -> None:
         y = fd.Function(V)
         assembler = fd.get_assembler(fd.action(A, x), tensor=y)
         (parloop,) = assembler.parloops(y)
-        empirical_nbytes = _get_roofline_local_nbytes_per_cell_for_fem_kernel(
-            parloop
-        )
+        empirical_nbytes = _get_roofline_local_nbytes_per_cell_for_fem_kernel(parloop)
         if np.testing.assert_array_equal(empirical_nbytes, ref_nbytes):
             raise RuntimeError(
                 f"For {op=}, {dim=}, {p=}: "
@@ -270,9 +269,31 @@ def verify_local_nbytes_accesses_per_cell() -> None:
 
 
 if __name__ == "__main__":
-    # print_flops()
-    # print_nfootprint_bytes()
-    # print_roofline_local_nbytes_reads()
-    verify_flops_per_cell()
-    verify_nfootprint_bytes()
-    verify_local_nbytes_accesses_per_cell()
+    parser = argparse.ArgumentParser(
+        description="Utility to verify the tabulated data used in Roofline computation."
+    )
+    parser.add_argument(
+        "--no-verify-flops_per_cell",
+        action="store_true",
+        help="Do not verify the #FLOPS per cell for the action operators",
+    )
+    parser.add_argument(
+        "--no-verify-nfootprint_bytes",
+        action="store_true",
+        help="Do not verify the footprint memory accesses for the action operators.",
+    )
+    parser.add_argument(
+        "--no-verify-local_bytes_accesses_per_cell",
+        action="store_true",
+        help=(
+            "Do not verify the local memory accesses per cell for the action operators."
+        ),
+    )
+    args = parser.parse_args()
+
+    if not args.no_verify_flops_per_cell:
+        verify_flops_per_cell()
+    if not args.no_verify_nfootprint_bytes:
+        verify_nfootprint_bytes()
+    if not args.no_verify_local_nbytes_accesses_per_cell:
+        verify_local_nbytes_accesses_per_cell()
