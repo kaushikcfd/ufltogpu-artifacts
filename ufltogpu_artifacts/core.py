@@ -365,7 +365,9 @@ def get_roofline_gflops(
     )
 
     if not np.isnan(nlocal_nbytes_per_cell):
-        flops_local_bw = flops_per_cell_for_op * (beta_peak_shared / nlocal_nbytes_per_cell)
+        flops_local_bw = flops_per_cell_for_op * (
+            beta_peak_shared / nlocal_nbytes_per_cell
+        )
     else:
         flops_local_bw = np.inf
 
