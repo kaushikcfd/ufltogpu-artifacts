@@ -339,20 +339,34 @@ def get_num_cells(dim: int, nel_1d: int) -> int:
         raise ValueError(f"{dim=}")
 
 
-def get_roofline_flops(op: Op, dim: int, deg: int, device: Device) -> float:
-    # if device == Device.K40:
-    #     fpeak = 1430  # GFlops/s
-    #     beta_peak_global = 288  # GB/s
-    #     beta_peak_shared = 1000  # GB/s
-    # elif device == Device.TITANV:
-    #     fpeak = 6144  # GFlops/s
-    #     beta_peak_global = 653  # GB/s
-    #     beta_peak_shared = 13800  # GB/s
-    # else:
-    #     raise ValueError(f"Unknown device {dev_name}.")
+def get_roofline_gflops(
+    op: Op, dim: int, deg: int, num_cells: int, device: Device
+) -> float:
+    """
+    Returns the roofline FLOPS (as per Sec 5.1 of the paper)
+    """
+    if device == Device.K40:
+        fpeak = 1430  # GFlops/s
+        beta_peak_global = 288  # GB/s
+        beta_peak_shared = 1000  # GB/s
+    elif device == Device.TITANV:
+        fpeak = 6144  # GFlops/s
+        beta_peak_global = 653  # GB/s
+        beta_peak_shared = 13800  # GB/s
+    else:
+        raise ValueError(f"Unknown device {device_name(device)}.")
 
-    raise NotImplementedError("No idea what the heck is going on over here.")
-    # AI_global = arithmetic_intensity[(prob.upper(), cell_type, fem_space, deg)]
-    # Fs_to_F = fs_by_f_ratios[(prob.upper(), cell_type, fem_space, deg)]
-    # AI_local = 0.25 / Fs_to_F
-    # return min(AI_global * beta_peak_global, AI_local * beta_peak_shared, fpeak)
+    flops_per_cell_for_op = flops_per_cell[op, dim, deg]
+    nglobal_nbytes_per_cell = nfootprint_bytes[op, dim, deg, num_cells] / num_cells
+    nlocal_nbytes_per_cell = local_nbytes_accesses_per_cell[op, dim, deg]
+
+    flops_global_bw = flops_per_cell_for_op * (
+        beta_peak_global / nglobal_nbytes_per_cell
+    )
+
+    if not np.isnan(nlocal_nbytes_per_cell):
+        flops_local_bw = flops_per_cell_for_op * (beta_peak_shared / nlocal_nbytes_per_cell)
+    else:
+        flops_local_bw = np.inf
+
+    return min(flops_global_bw, flops_local_bw, fpeak)
