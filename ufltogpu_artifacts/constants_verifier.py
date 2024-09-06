@@ -11,6 +11,7 @@ from ufltogpu_artifacts.core import (
     flops_per_cell,
     get_nel1d_for_reported_data,
     get_num_cells,
+    local_nbytes_accesses_per_cell,
     nfootprint_bytes,
 )
 from ufltogpu_artifacts.weak_forms import get_bilinear_form
@@ -181,8 +182,97 @@ def verify_nfootprint_bytes() -> None:
     print("Verified nfootprint_bytes for all reference values. ✨ 🦾 ✨")
 
 
+def _get_roofline_local_nbytes_per_cell_for_fem_kernel(p: op2.AbstractParloop) -> float:
+    from pyop2.codegen.rep2loopy import generate
+    from pyop2.transforms.auto_tiling import (
+        MetadataMismatchError,
+        _preprocess_tunit_for_autotiling,
+        inference_which_should_ideally_be_done_by_passing_metadata,
+    )
+    from pyop2.transforms.gpu_utils import preprocess_t_unit_for_gpu
+
+    t_unit = generate(p.global_kernel.builder)
+    t_unit = preprocess_t_unit_for_gpu(t_unit)
+    t_unit = _preprocess_tunit_for_autotiling(t_unit)
+    kernel = t_unit.default_entrypoint
+
+    try:
+        _, metadata = inference_which_should_ideally_be_done_by_passing_metadata(kernel)
+    except MetadataMismatchError:
+        return np.nan
+
+    return sum(
+        kernel.temporary_variables[deriv_mat].nbytes
+        for mv_stage in metadata.matvec_stage_descrs
+        for deriv_mat in mv_stage.deriv_matrices
+    )
+
+
+def print_roofline_local_nbytes_reads() -> None:
+    """
+    Prints the :data:`ufltogpu_artifacts.ai_shared` as a python dict.
+    """
+    import black
+
+    BLACK_MODE = black.Mode(target_versions={black.TargetVersion.PY311}, line_length=84)
+
+    code = ""
+
+    code += "local_nbytes_accesses_per_cell = {\n"
+
+    for op in [
+        Op.MASS,
+        Op.LAPLACE,
+        Op.HELMHOLTZ,
+        Op.ELASTICITY,
+        Op.HYPERELASTICITY,
+    ]:
+        for dim in [2, 3]:
+            p_lo, p_hi = get_p_lo_hi(dim)
+            for p in range(p_lo, p_hi + 1):
+                A, V = get_bilinear_form(1, dim, op, p)
+                x = fd.Function(V)
+                y = fd.Function(V)
+                assembler = fd.get_assembler(fd.action(A, x), tensor=y)
+                (parloop,) = assembler.parloops(y)
+                local_nbytes = _get_roofline_local_nbytes_per_cell_for_fem_kernel(
+                    parloop
+                )
+                code += f"({op}, {dim}, {p}): {local_nbytes},\n"
+                print(f"Done with {op=}, {dim=}, {p=}")
+        code += "\n"
+
+    code += "}"
+    print(black.format_file_contents(code, fast=False, mode=BLACK_MODE))
+
+
+def verify_local_nbytes_accesses_per_cell() -> None:
+    """
+    Verifies the correctness of entries in
+    :data:`ufltogpu_artifacts.local_nbytes_accesses_per_cell`.
+    """
+    for (op, dim, p), ref_nbytes in local_nbytes_accesses_per_cell.items():
+        A, V = get_bilinear_form(1, dim, op, p)
+        x = fd.Function(V)
+        y = fd.Function(V)
+        assembler = fd.get_assembler(fd.action(A, x), tensor=y)
+        (parloop,) = assembler.parloops(y)
+        empirical_nbytes = _get_roofline_local_nbytes_per_cell_for_fem_kernel(
+            parloop
+        )
+        if np.testing.assert_array_equal(empirical_nbytes, ref_nbytes):
+            raise RuntimeError(
+                f"For {op=}, {dim=}, {p=}: "
+                f"Expected = {ref_nbytes}, Measured = {empirical_nbytes}"
+            )
+
+    print("Verified local_nbytes_accesses_per_cell for all reference values. ✨ 🦾 ✨")
+
+
 if __name__ == "__main__":
     # print_flops()
     # print_nfootprint_bytes()
+    # print_roofline_local_nbytes_reads()
     verify_flops_per_cell()
     verify_nfootprint_bytes()
+    verify_local_nbytes_accesses_per_cell()
