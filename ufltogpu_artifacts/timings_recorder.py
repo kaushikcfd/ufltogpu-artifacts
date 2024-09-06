@@ -16,10 +16,11 @@ from pyop2.backends.cuda import cuda_backend
 from pyop2.op2 import AbstractParloop
 from pyop2.transforms.auto_tiling import AutotilingFallback
 
+from ufltogpu_artifacts.constants import flops_per_cell
 from ufltogpu_artifacts.core import (
     Op,
+    create_or_verify_db,
     device_name,
-    flops_per_cell,
     get_active_cuda_device_and_version,
     name_to_op,
     op_name,
@@ -36,58 +37,6 @@ warnings.filterwarnings("ignore", category=AutotilingFallback)
 
 fd.set_offloading_backend(cuda_backend)
 logger = logging.getLogger(__name__)
-
-
-def create_or_verify_db(
-    path: str,
-) -> sql.Connection:
-
-    conn = sql.connect(path)
-    cursor = conn.cursor()
-
-    cursor.execute(
-        " SELECT name FROM sqlite_master WHERE (type='table' AND"
-        " name='AUTOTILING_TIMES');"
-    )
-
-    if cursor.fetchall():
-        # Found the table.
-        # Verify the columns
-        cursor.execute(
-            "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE"
-            " TABLE_NAME='AUTOTILING_TIMES'"
-        )
-        if cursor.fetchall() != [
-            "ID",
-            "op",
-            "dim",
-            "degree",
-            "device_name",
-            "n_cells",
-            "runtime_in_sec",
-            "cuda_sdk_version",
-            "timestamp",
-        ]:
-            raise RuntimeError(
-                f"Provided database ('{path}') contains a table with incorrect columns."
-            )
-    else:
-        cursor.execute(
-            "CREATE TABLE AUTOTILING_TIMES ("
-            " ID INTEGER PRIMARY KEY AUTOINCREMENT,"
-            " op TEXT,"
-            " dim INT,"
-            " degree INT,"
-            " device_name TEXT,"
-            " n_cells INT,"
-            " runtime_in_sec REAL,"
-            " cuda_sdk_version TEXT,"
-            " timestamp TEXT"
-            ")"
-        )
-        conn.commit()
-
-    return conn
 
 
 def _get_parloop_and_args(

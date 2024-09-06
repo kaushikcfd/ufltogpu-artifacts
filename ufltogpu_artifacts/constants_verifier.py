@@ -7,13 +7,15 @@ import firedrake as fd
 import pyop2.op2 as op2
 from tsfc import compile_form
 
-from ufltogpu_artifacts.core import (
-    Op,
+from ufltogpu_artifacts.constants import (
     flops_per_cell,
-    get_nel1d_for_reported_data,
-    get_num_cells,
     local_nbytes_accesses_per_cell,
     nfootprint_bytes,
+)
+from ufltogpu_artifacts.core import (
+    Op,
+    get_nel1d_for_reported_data,
+    get_num_cells,
 )
 from ufltogpu_artifacts.weak_forms import get_bilinear_form
 
@@ -295,5 +297,5 @@ if __name__ == "__main__":
         verify_flops_per_cell()
     if not args.no_verify_nfootprint_bytes:
         verify_nfootprint_bytes()
-    if not args.no_verify_local_nbytes_accesses_per_cell:
+    if not args.no_verify_local_bytes_accesses_per_cell:
         verify_local_nbytes_accesses_per_cell()
