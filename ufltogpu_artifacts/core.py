@@ -3,6 +3,8 @@ from __future__ import annotations
 import enum
 from functools import cache
 
+import numpy as np
+
 
 __doc__ = """
 .. data:: flops_per_cell
@@ -16,11 +18,10 @@ __doc__ = """
     A mapping from ``(Operator, dim, degree, num_cells)`` to footprint
     bytes accessed by the corresponding action operator.
 
-.. data:: fs_by_f_ratio
+.. data:: local_nbytes_accesses_per_cell
 
-    A mapping from ``(Operator, dim, degree)`` to number of ratio of
-      FLOP-arithmetic
-    intensity required to compute the corresponding action.
+    A mapping from ``(Operator, dim, degree)`` to the number of local memory
+    accesses as per the roofline model kernel in Sec 5.1 of the paper.
 """
 
 
@@ -162,79 +163,6 @@ flops_per_cell = {
     (Op.HYPERELASTICITY, 3, 6): 6616456,
 }
 
-fs_by_f_ratios = {
-    (Op.MASS, 2, 1): 0.7959183673469388,
-    (Op.MASS, 2, 2): 0.8470588235294118,
-    (Op.MASS, 2, 3): 0.9266409266409267,
-    (Op.MASS, 2, 4): 0.959079283887468,
-    (Op.MASS, 2, 5): 0.9723472668810289,
-    (Op.MASS, 2, 6): 0.98,
-    (Op.MASS, 2, 7): 0.9848258174823681,
-    (Op.MASS, 2, 8): 0.9880726484142044,
-    (Op.MASS, 3, 1): 0.6336633663366337,
-    (Op.MASS, 3, 2): 0.9076175040518638,
-    (Op.MASS, 3, 3): 0.9614421632448673,
-    (Op.MASS, 3, 4): 0.9843073288711401,
-    (Op.MASS, 3, 5): 0.9905619817790972,
-    (Op.MASS, 3, 6): 0.9938342402317981,
-    (Op.LAPLACE, 2, 1): 0.255319148,
-    (Op.LAPLACE, 2, 2): 0.6857142857142857,
-    (Op.LAPLACE, 2, 3): 0.8121827411167513,
-    (Op.LAPLACE, 2, 4): 0.8775137111517367,
-    (Op.LAPLACE, 2, 5): 0.9138381201044387,
-    (Op.LAPLACE, 2, 6): 0.9349565217391305,
-    (Op.LAPLACE, 2, 7): 0.9491525423728814,
-    (Op.LAPLACE, 2, 8): 0.9591607343574372,
-    (Op.LAPLACE, 3, 1): 0.1875,
-    (Op.LAPLACE, 3, 2): 0.7038123167155426,
-    (Op.LAPLACE, 3, 3): 0.8610968733982574,
-    (Op.LAPLACE, 3, 4): 0.9195402298850575,
-    (Op.LAPLACE, 3, 5): 0.9511300330630916,
-    (Op.LAPLACE, 3, 6): 0.9670868533965834,
-    (Op.HELMHOLTZ, 2, 1): 0.56043956,
-    (Op.HELMHOLTZ, 2, 2): 0.7868852459016393,
-    (Op.HELMHOLTZ, 2, 3): 0.8711433756805808,
-    (Op.HELMHOLTZ, 2, 4): 0.9144482828693355,
-    (Op.HELMHOLTZ, 2, 5): 0.9382562829661806,
-    (Op.HELMHOLTZ, 2, 6): 0.9533846777462505,
-    (Op.HELMHOLTZ, 2, 7): 0.9635799672393963,
-    (Op.HELMHOLTZ, 2, 8): 0.9707703575471069,
-    (Op.HELMHOLTZ, 3, 1): 0.4444444444444444,
-    (Op.HELMHOLTZ, 3, 2): 0.8011444921316166,
-    (Op.HELMHOLTZ, 3, 3): 0.8944793850454228,
-    (Op.HELMHOLTZ, 3, 4): 0.9403420158246127,
-    (Op.HELMHOLTZ, 3, 5): 0.9620902556148776,
-    (Op.HELMHOLTZ, 3, 6): 0.9744833140617635,
-    (Op.ELASTICITY, 2, 1): 0.258064516,
-    (Op.ELASTICITY, 2, 2): 0.6428571428571429,
-    (Op.ELASTICITY, 2, 3): 0.7649402390438247,
-    (Op.ELASTICITY, 2, 4): 0.8359941944847605,
-    (Op.ELASTICITY, 2, 5): 0.8795811518324608,
-    (Op.ELASTICITY, 2, 6): 0.9074438755415518,
-    (Op.ELASTICITY, 2, 7): 0.9267748079070073,
-    (Op.ELASTICITY, 2, 8): 0.940696131468817,
-    (Op.ELASTICITY, 3, 1): 0.236065573,
-    (Op.ELASTICITY, 3, 2): 0.675739089629282,
-    (Op.ELASTICITY, 3, 3): 0.8187799528876615,
-    (Op.ELASTICITY, 3, 4): 0.889124106906589,
-    (Op.ELASTICITY, 3, 5): 0.9287754537915783,
-    (Op.ELASTICITY, 3, 6): 0.9514378979291298,
-    (Op.HYPERELASTICITY, 2, 1): 0.13043782,
-    (Op.HYPERELASTICITY, 2, 2): 0.5023255813953489,
-    (Op.HYPERELASTICITY, 2, 3): 0.6317784563546383,
-    (Op.HYPERELASTICITY, 2, 4): 0.7207943447881339,
-    (Op.HYPERELASTICITY, 2, 5): 0.7834948661356875,
-    (Op.HYPERELASTICITY, 2, 6): 0.8284209346632299,
-    (Op.HYPERELASTICITY, 2, 7): 0.8613039656931852,
-    (Op.HYPERELASTICITY, 2, 8): 0.8859010488630936,
-    (Op.HYPERELASTICITY, 3, 1): 0.120401337,
-    (Op.HYPERELASTICITY, 3, 2): 0.5511409200262448,
-    (Op.HYPERELASTICITY, 3, 3): 0.7126191657604967,
-    (Op.HYPERELASTICITY, 3, 4): 0.8128349353388286,
-    (Op.HYPERELASTICITY, 3, 5): 0.8742178819024475,
-    (Op.HYPERELASTICITY, 3, 6): 0.912483216120746,
-}
-
 nfootprint_bytes = {
     (Op.MASS, 2, 1, 524288): 16818216,
     (Op.MASS, 2, 2, 524288): 48300072,
@@ -306,6 +234,80 @@ nfootprint_bytes = {
     (Op.HYPERELASTICITY, 3, 4, 196608): 237615496,
     (Op.HYPERELASTICITY, 3, 5, 196608): 448683400,
     (Op.HYPERELASTICITY, 3, 6, 196608): 760217992,
+}
+
+
+local_nbytes_accesses_per_cell = {
+    (Op.MASS, 2, 1): np.nan,
+    (Op.MASS, 2, 2): 576,
+    (Op.MASS, 2, 3): 1920,
+    (Op.MASS, 2, 4): 3840,
+    (Op.MASS, 2, 5): 8400,
+    (Op.MASS, 2, 6): 14784,
+    (Op.MASS, 2, 7): 24192,
+    (Op.MASS, 2, 8): 39600,
+    (Op.MASS, 3, 1): 256,
+    (Op.MASS, 3, 2): 1760,
+    (Op.MASS, 3, 3): 7360,
+    (Op.MASS, 3, 4): 24640,
+    (Op.MASS, 3, 5): 66304,
+    (Op.MASS, 3, 6): 163968,
+    (Op.LAPLACE, 2, 1): np.nan,
+    (Op.LAPLACE, 2, 2): 576,
+    (Op.LAPLACE, 2, 3): 1920,
+    (Op.LAPLACE, 2, 4): 5760,
+    (Op.LAPLACE, 2, 5): 10752,
+    (Op.LAPLACE, 2, 6): 22400,
+    (Op.LAPLACE, 2, 7): 38016,
+    (Op.LAPLACE, 2, 8): 60480,
+    (Op.LAPLACE, 3, 1): np.nan,
+    (Op.LAPLACE, 3, 2): 1920,
+    (Op.LAPLACE, 3, 3): 10560,
+    (Op.LAPLACE, 3, 4): 38640,
+    (Op.LAPLACE, 3, 5): 118272,
+    (Op.LAPLACE, 3, 6): 298368,
+    (Op.HELMHOLTZ, 2, 1): np.nan,
+    (Op.HELMHOLTZ, 2, 2): 1728,
+    (Op.HELMHOLTZ, 2, 3): 5760,
+    (Op.HELMHOLTZ, 2, 4): 11520,
+    (Op.HELMHOLTZ, 2, 5): 25200,
+    (Op.HELMHOLTZ, 2, 6): 44352,
+    (Op.HELMHOLTZ, 2, 7): 72576,
+    (Op.HELMHOLTZ, 2, 8): 118800,
+    (Op.HELMHOLTZ, 3, 1): np.nan,
+    (Op.HELMHOLTZ, 3, 2): 7040,
+    (Op.HELMHOLTZ, 3, 3): 29440,
+    (Op.HELMHOLTZ, 3, 4): 98560,
+    (Op.HELMHOLTZ, 3, 5): 265216,
+    (Op.HELMHOLTZ, 3, 6): 655872,
+    (Op.ELASTICITY, 2, 1): np.nan,
+    (Op.ELASTICITY, 2, 2): 576,
+    (Op.ELASTICITY, 2, 3): 1920,
+    (Op.ELASTICITY, 2, 4): 5760,
+    (Op.ELASTICITY, 2, 5): 10752,
+    (Op.ELASTICITY, 2, 6): 22400,
+    (Op.ELASTICITY, 2, 7): 38016,
+    (Op.ELASTICITY, 2, 8): 60480,
+    (Op.ELASTICITY, 3, 1): np.nan,
+    (Op.ELASTICITY, 3, 2): 1920,
+    (Op.ELASTICITY, 3, 3): 10560,
+    (Op.ELASTICITY, 3, 4): 38640,
+    (Op.ELASTICITY, 3, 5): 118272,
+    (Op.ELASTICITY, 3, 6): 298368,
+    (Op.HYPERELASTICITY, 2, 1): np.nan,
+    (Op.HYPERELASTICITY, 2, 2): 1152,
+    (Op.HYPERELASTICITY, 2, 3): 5120,
+    (Op.HYPERELASTICITY, 2, 4): 15840,
+    (Op.HYPERELASTICITY, 2, 5): 36960,
+    (Op.HYPERELASTICITY, 2, 6): 70784,
+    (Op.HYPERELASTICITY, 2, 7): 129024,
+    (Op.HYPERELASTICITY, 2, 8): 216000,
+    (Op.HYPERELASTICITY, 3, 1): np.nan,
+    (Op.HYPERELASTICITY, 3, 2): 5280,
+    (Op.HYPERELASTICITY, 3, 3): 42240,
+    (Op.HYPERELASTICITY, 3, 4): 204960,
+    (Op.HYPERELASTICITY, 3, 5): 1959552,
+    (Op.HYPERELASTICITY, 3, 6): 5366592,
 }
 
 
