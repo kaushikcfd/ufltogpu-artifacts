@@ -6,10 +6,8 @@ import firedrake as fd
 import argparse
 import logging
 import sqlite3 as sql
-from datetime import datetime
 from typing import Any, Sequence
 
-import pytz
 from tabulate import tabulate
 
 from pyop2.backends.cuda import cuda_backend
@@ -19,8 +17,6 @@ from pyop2.transforms.auto_tiling import AutotilingFallback
 from ufltogpu_artifacts.constants import flops_per_cell
 from ufltogpu_artifacts.core import (
     Op,
-    create_or_verify_db,
-    device_name,
     get_active_cuda_device_and_version,
     name_to_op,
     op_name,
@@ -28,6 +24,7 @@ from ufltogpu_artifacts.core import (
     get_num_cells,
     get_roofline_gflops,
 )
+from ufltogpu_artifacts.sql_utils import create_or_verify_db, record_runtime
 from ufltogpu_artifacts.weak_forms import get_bilinear_form
 
 import warnings
@@ -118,43 +115,6 @@ def get_flops(*, op: Op, dim: int, p: int, nel_1d: int) -> int:
     return get_num_cells(dim, nel_1d) * flops_per_cell[(op, dim, p)]
 
 
-def record_runtime(
-    *,
-    cursor: sql.Cursor | None,
-    op: Op,
-    dim: int,
-    p: int,
-    num_cells: int,
-    runtime_in_s: float,
-) -> None:
-    """
-    Returns the Floating-point operations of applying operator *op* in dimension
-    *dim* with polynomial discretization function spaces of degree *p*.
-    """
-    if cursor is None:
-        return
-
-    device, cuda_sdk_version = get_active_cuda_device_and_version()
-
-    timestamp = datetime.now(pytz.timezone("America/Chicago")).strftime(
-        "%Y_%m_%d_%H%M%S"
-    )
-
-    cursor.execute(
-        "INSERT INTO AUTOTILING_TIMES"
-        "(op, dim, degree, device_name, n_cells, cuda_sdk_version, runtime_in_sec)"
-        " VALUES (?, ?, ?, ?, ?, ?)",
-        op_name(op),
-        dim,
-        p,
-        device_name(device),
-        num_cells,
-        runtime_in_s,
-        cuda_sdk_version,
-        timestamp,
-    )
-
-
 def main(
     *,
     conn: sql.Connection | None,
@@ -165,6 +125,8 @@ def main(
 ) -> None:
     timings_table: list[tuple[str, float, float]] = []
     cursor = conn.cursor() if conn else None
+
+    device, cuda_sdk_version = get_active_cuda_device_and_version()
 
     for dim in dims:
         nel_1d = get_nel1d_for_reported_data(dim)
@@ -191,10 +153,12 @@ def main(
                     p=p,
                     num_cells=num_cells,
                     runtime_in_s=t_op,
+                    device=device,
+                    cuda_sdk_version=cuda_sdk_version,
                 )
 
             if cursor is not None:
-                cursor.commit()
+                cursor.connection.commit()
 
     print(
         tabulate(

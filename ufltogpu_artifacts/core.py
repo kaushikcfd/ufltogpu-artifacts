@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import enum
-import sqlite3 as sql
 from functools import cache
 
 import numpy as np
@@ -71,89 +70,6 @@ def get_active_cuda_device_and_version() -> tuple[Device, str]:
     return name_to_device(context.get_device().name()), ".".join(
         str(v) for v in cuda.get_version()
     )
-
-
-def create_or_verify_db(
-    path: str, create_if_does_not_exist: bool = True
-) -> sql.Connection:
-
-    conn = sql.connect(path)
-    cursor = conn.cursor()
-
-    cursor.execute(
-        " SELECT name FROM sqlite_master WHERE (type='table' AND"
-        " name='AUTOTILING_TIMES');"
-    )
-
-    if cursor.fetchall():
-        # Found the table.
-        # Verify the columns
-        cursor.execute(
-            "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE"
-            " TABLE_NAME='AUTOTILING_TIMES'"
-        )
-        if cursor.fetchall() != [
-            "ID",
-            "op",
-            "dim",
-            "degree",
-            "device_name",
-            "n_cells",
-            "runtime_in_sec",
-            "cuda_sdk_version",
-            "timestamp",
-        ]:
-            raise RuntimeError(
-                f"Provided database ('{path}') contains a table with incorrect columns."
-            )
-    else:
-        if not create_if_does_not_exist:
-            raise RuntimeError(
-                f"Provided database ('{path}') either does not exist or does not"
-                " contain the timings table."
-            )
-        cursor.execute(
-            "CREATE TABLE AUTOTILING_TIMES ("
-            " ID INTEGER PRIMARY KEY AUTOINCREMENT,"
-            " op TEXT,"
-            " dim INT,"
-            " degree INT,"
-            " device_name TEXT,"
-            " n_cells INT,"
-            " runtime_in_sec REAL,"
-            " cuda_sdk_version TEXT,"
-            " timestamp TEXT"
-            ")"
-        )
-        conn.commit()
-
-    return conn
-
-
-def fetch_flops(
-    cursor: sql.Cursor,
-    device: Device,
-    op: Op,
-    dim: int,
-    degree: int,
-    num_cells: int,
-) -> float:
-    """
-    Returns the GFLOPS recorded in the SQL database active in *cursor* for
-    running the action operator *op* on the device *device*.
-    """
-    from .constants import flops_per_cell
-
-    cursor.execute(
-        "SELECT runtime_in_sec FROM AUTOTILING_TIMES WHERE (op = ?  AND dim = ? AND"
-        " degree = ? AND device_name = ? AND n_cells = ?);",
-        (op_name(op), dim, degree, device_name(device), num_cells),
-    )
-    runtimes = cursor.fetchall()
-    if len(runtimes) > 1:
-        raise NotImplementedError("Mulitple data points, not sure which to pick.")
-
-    return (1e-9 * flops_per_cell[(op, dim, degree)]) / runtimes
 
 
 def get_nel1d_for_reported_data(dim: int) -> int:
