@@ -11,9 +11,7 @@ from matplotlib import rc
 from ufltogpu_artifacts.core import (
     Device,
     Op,
-    create_or_verify_db,
     device_name,
-    fetch_flops,
     get_nel1d_for_reported_data,
     get_num_cells,
     get_roofline_gflops,
@@ -21,11 +19,63 @@ from ufltogpu_artifacts.core import (
     name_to_op,
     op_name,
 )
+from ufltogpu_artifacts.sql_utils import create_or_verify_db, fetch_flops, record_gflops
 
 
 rc("text", usetex=True)
 
-plt.style.use("seaborn")
+plt.style.use("seaborn-v0_8")
+
+
+# {{{ testing script for the barplotter
+
+
+def _test_main():
+    import tempfile
+
+    from numpy.random import default_rng
+
+    rng = default_rng(0)
+
+    device = Device.TITANV
+    cuda_sdk_version = "0.0"  # dummy version
+    fp = tempfile.NamedTemporaryFile(suffix=".db")
+    dim_to_p_hi = {2: 8, 3: 6}
+
+    # {{{ populate our dummy database
+
+    conn = create_or_verify_db(fp.name)
+    cursor = conn.cursor()
+
+    for op in Op:
+        for dim in [2, 3]:
+            for p in range(1, dim_to_p_hi[dim] + 1):
+                num_cells = get_num_cells(dim, get_nel1d_for_reported_data(dim))
+                roofline_gflops = get_roofline_gflops(op, dim, p, num_cells, device)
+                dummy_gflops = (0.4 * rng.random() + 0.3) * roofline_gflops
+                record_gflops(
+                    cursor=cursor,
+                    op=op,
+                    dim=dim,
+                    p=p,
+                    num_cells=num_cells,
+                    gflops=dummy_gflops,
+                    device=device,
+                    cuda_sdk_version=cuda_sdk_version,
+                )
+
+    conn.commit()
+    conn.close()
+    del conn
+
+    # }}}
+
+    conn = create_or_verify_db(fp.name)
+
+    main(conn, device, list(Op), 1, dim_to_p_hi[2], 1, dim_to_p_hi[3], None)
+    fp.close()
+
+# }}}
 
 
 def main(
@@ -44,17 +94,21 @@ def main(
         len(operators),
         1,
         figsize=(5, 6 * len(operators)),
-        squeeze=False,
-        gridspec_kw={"hspace": 0.3},
+        squeeze=True,
+        gridspec_kw={"hspace": 0.35},
     )
+    if not isinstance(plt_axes, np.ndarray):
+        # since we don"t pass "squeeze=False" to subplots.
+        plt_axes = (plt_axes,)
 
     for plt_ax, op in zip(plt_axes, operators):
+        plt_ax.set_title(f"\\textsc{{{op_name(op)}}}", fontsize=8, pad=3)
         expt_flops = []
         roofline_flops = []
 
-        xticks = [f"{op_name(op)[:5]}.2D.P{p}" for p in range(p_lo_2d, p_hi_2d + 1)] + [
-            f"{op_name(op)[:5]}.3D.P{p}" for p in range(p_lo_3d, p_hi_3d + 1)
-        ]
+        xticks = [
+            f"$P^{{\\mathrm{{2D}}}}_{{{p}}}$" for p in range(p_lo_2d, p_hi_2d + 1)
+        ] + [f"$P^{{\\mathrm{{3D}}}}_{{{p}}}$" for p in range(p_lo_3d, p_hi_3d + 1)]
         expt_flops = [
             fetch_flops(
                 cursor,
@@ -78,12 +132,12 @@ def main(
         ]
         roofline_flops = [
             get_roofline_gflops(
-                op, 2, p, get_num_cells(2, get_nel1d_for_reported_data(2))
+                op, 2, p, get_num_cells(2, get_nel1d_for_reported_data(2)), device
             )
             for p in range(p_lo_2d, p_hi_2d + 1)
         ] + [
             get_roofline_gflops(
-                op, 3, p, get_num_cells(3, get_nel1d_for_reported_data(3))
+                op, 3, p, get_num_cells(3, get_nel1d_for_reported_data(3)), device
             )
             for p in range(p_lo_3d, p_hi_3d + 1)
         ]
@@ -104,7 +158,7 @@ def main(
         plt_ax.xaxis.set_major_formatter(ticker.FixedFormatter(xticks))
 
         plt_ax.set_ylabel("GFLOPS")
-        plt.setp(plt_ax.get_xticklabels(), rotation=15, fontsize=6)
+        plt.setp(plt_ax.get_xticklabels(), fontsize=6)
 
     plt_axes[0].legend(bbox_to_anchor=(0.0, 1.04, 1.0, 0.3), loc="lower center", ncol=3)
 
@@ -115,6 +169,11 @@ def main(
 
 
 if __name__ == "__main__":
+    if 0:
+        # enable to test plotting with dummy values
+        _test_main()
+        exit()
+
     parser = argparse.ArgumentParser(
         description="Utility to plot throughputs stored  in the SQL-database."
     )
