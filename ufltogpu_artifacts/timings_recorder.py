@@ -34,6 +34,7 @@ warnings.filterwarnings("ignore", category=AutotilingFallback)
 
 fd.set_offloading_backend(cuda_backend)
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.CRITICAL)
 
 
 def _get_parloop_and_args(
@@ -141,7 +142,7 @@ def main(
                 timings_table.append(
                     (
                         f"{op_name(op)}.{dim}D.P{p}",
-                        1e-9 * (nflops / t_op),
+                        f"{1e-9 * (nflops / t_op):.1f}",
                         roofline_gflops,
                     )
                 )
@@ -156,6 +157,7 @@ def main(
                     device=device,
                     cuda_sdk_version=cuda_sdk_version,
                 )
+                logger.critical(f"Done with {op=}, {dim=}, {p=}")
 
             if cursor is not None:
                 cursor.connection.commit()
@@ -163,7 +165,7 @@ def main(
     print(
         tabulate(
             timings_table,
-            headers=("Operator", "GFLOPS", "Roofline\nGFLOPS"),
+            headers=("Operator", "Autotiling\nGFLOPS", "Roofline\nGFLOPS"),
             tablefmt="fancy_grid",
         )
     )
