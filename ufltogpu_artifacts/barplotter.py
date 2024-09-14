@@ -187,12 +187,11 @@ if __name__ == "__main__":
         required=True,
     )
     parser.add_argument(
-        "--device", type=str, nargs=1, choices=[device_name(dev) for dev in Device]
+        "--device", type=str, choices=[device_name(dev) for dev in Device]
     )
     parser.add_argument(
         "--db_path",
         type=str,
-        nargs=1,
         help=(
             "Path to the SQL database which is to be updated. A new one will be created"
             " if none exists at the provided path."
@@ -232,14 +231,13 @@ if __name__ == "__main__":
         ),
         metavar="<file>",
         required=False,
-        default=False,
+        default=None,
     )
 
     args = parser.parse_args()
 
     assert (
-        isinstance(args.dim, list)
-        and (args.op, list)
+        isinstance(args.op, list)
         and isinstance(args.p_range_2d, list)
         and isinstance(args.p_range_3d, list)
     )
@@ -259,4 +257,5 @@ if __name__ == "__main__":
         p_hi_2d=p_hi_2d,
         p_lo_3d=p_lo_3d,
         p_hi_3d=p_hi_3d,
+        file_to_save_in=args.o,
     )

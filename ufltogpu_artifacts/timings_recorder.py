@@ -196,7 +196,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--db_path",
         type=str,
-        nargs=1,
         help=(
             "Path to the SQL database which is to be updated. A new one will be created"
             " if none exists at the provided path."
