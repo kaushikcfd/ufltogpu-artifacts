@@ -52,10 +52,29 @@ options:
   --p_range X Y         Operators corresponding to polynomial degrees {X, X+1, ..., Y} are evaluated.
 ```
 
+### HOWTO: Plot the results written to DB
+
+```console
+> python barplotter.py -h
+usage: barplotter.py [-h] --op {Mass,Laplace,Helmholtz,Elasticity,Hyperelasticity} [{Mass,Laplace,Helmholtz,Elasticity,Hyperelasticity} ...]
+                     [--device {NVIDIA TESLA K40,NVIDIA TITAN V}] --db_path DB_PATH --p_range_2d X Y --p_range_3d X Y [-o <file>]
+
+Utility to plot throughputs stored in the SQL-database.
+
+options:
+  -h, --help            show this help message and exit
+  --op {Mass,Laplace,Helmholtz,Elasticity,Hyperelasticity} [{Mass,Laplace,Helmholtz,Elasticity,Hyperelasticity} ...]
+  --device {NVIDIA TESLA K40,NVIDIA TITAN V}
+  --db_path DB_PATH     Path to the SQL database which is to be updated. A new one will be created if none exists at the provided path.
+  --p_range_2d X Y      2-D Operators corresponding to polynomial degrees {X, X+1, ..., Y} are evaluated.
+  --p_range_3d X Y      3-D Operators corresponding to polynomial degrees {X, X+1, ..., Y} are evaluated.
+  -o <file>             Place the generated plots in <file>. Plot is displayed using X-window if none passed.
+```
+
 ### HOWTO: Verify the constants used in Roofline calculations
 
 ```console
-> $ python constants_verifier.py -h
+> python constants_verifier.py -h
 usage: constants_verifier.py [-h] [--no-verify-flops_per_cell] [--no-verify-nfootprint_bytes] [--no-verify-local_bytes_accesses_per_cell]
 
 Utility to verify the tabulated data used in Roofline computation.
