@@ -13,7 +13,7 @@ reproduce the reported results.
 
     > python3 firedrake-install --venv-name firedrake_gpu --minimal-petsc --no-package-manager --package-branch firedrake gpu --package-branch tsfc gpu --package-branch pyop2 auto_tiling --cuda --mpicc=/usr/bin/mpicc.mpich --mpicxx=/usr/bin/mpicxx.mpich --mpif90=/usr/bin/mpif90.mpich --mpiexec=/usr/bin/mpiexec.mpich
     ```
-4. Clone this repository and build it.
+2. Clone this repository and build it.
    ```console
    > git clone https://github.com/kaushikcfd/ufltogpu-artifacts
 
@@ -23,7 +23,7 @@ reproduce the reported results.
    > pip install -e .
    ```
 
-5. Run the experiments
+3. Run the experiments
    ```console
    > cd ufltogpu-artifacts
    > python timings_recorder.py \

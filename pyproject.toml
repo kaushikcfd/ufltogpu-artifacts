@@ -34,7 +34,7 @@ dependencies = [
     "pytz",
     "tabulate",
     "siphash24",
-    "loopy@git+https://github.com/inducer/loopy.git@98b3ae887d96cbf1c0c54b6c1a998b5b4b833576",
+    "loopy@git+https://github.com/inducer/loopy.git@75e48829545e53b7b77902745c95b489d69521da",
 ]
 
 [project.urls]
