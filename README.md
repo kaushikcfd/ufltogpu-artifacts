@@ -99,6 +99,18 @@ the auto-tiling
 algorithm](https://github.com/kaushikcfd/PyOP2/compare/gpu...kaushikcfd:PyOP2:auto_tiling)
 builds upon the proposed changes to PyOP2.
 
+### Troubleshooting
+#### vectype=CUDA errors for Kepler micro-arch.?
+
+- Apply the following patch to `$FIREDRAKE_ENV/src/petsc`: [petsc_kepler.patch](/data/petsc_kepler.patch).
+- Re-compile petsc, petsc4py as:
+  ```console
+  > cd $FIREDRAKE_ENV/src/petsc
+  > PETSC_DIR=$PWD PETSC_ARCH=default make all
+  > # activate firedake-env
+  > PETSC_DIR=$FIREDRAKE_ENV/src/petsc PETSC_ARCH=default python -m pip install --no-build-isolation --no-binary mpi4py,randomgen,numpy --no-deps -vvv --ignore-installed $FIREDRAKE_ENV/src/petsc/src/binding/petsc4py/
+  ```
+
 ### Additional Information
 Please refer to the paper for more details on the experiments. If you encounter
 any issues or have questions, feel free to open an issue in this repository.

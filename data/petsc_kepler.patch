@@ -1,0 +1,79 @@
+diff --git a/include/petsc/private/cupminterface.hpp b/include/petsc/private/cupminterface.hpp
+index a9b13fcfac7..e6ea14bc1d2 100644
+--- a/include/petsc/private/cupminterface.hpp
++++ b/include/petsc/private/cupminterface.hpp
+@@ -242,23 +242,14 @@ struct InterfaceImpl<DeviceType::CUDA> : InterfaceBase<DeviceType::CUDA> {
+   // memory management
+   PETSC_CUPM_ALIAS_FUNCTION(cupmFree, cudaFree)
+   PETSC_CUPM_ALIAS_FUNCTION(cupmMalloc, cudaMalloc)
+-  #if PETSC_PKG_CUDA_VERSION_GE(11, 2, 0)
+-  PETSC_CUPM_ALIAS_FUNCTION(cupmFreeAsync, cudaFreeAsync)
+-  PETSC_CUPM_ALIAS_FUNCTION(cupmMallocAsync, cudaMallocAsync)
+-  #else
+   PETSC_CUPM_ALIAS_FUNCTION_GOBBLE(cupmFreeAsync, cudaFree, 1)
+   PETSC_CUPM_ALIAS_FUNCTION_GOBBLE(cupmMallocAsync, cudaMalloc, 1)
+-  #endif
+   PETSC_CUPM_ALIAS_FUNCTION(cupmMemcpy, cudaMemcpy)
+   PETSC_CUPM_ALIAS_FUNCTION(cupmMemcpyAsync, cudaMemcpyAsync)
+   PETSC_CUPM_ALIAS_FUNCTION(cupmMallocHost, cudaMallocHost)
+   PETSC_CUPM_ALIAS_FUNCTION(cupmFreeHost, cudaFreeHost)
+   PETSC_CUPM_ALIAS_FUNCTION(cupmMemset, cudaMemset)
+-  #if PETSC_PKG_CUDA_VERSION_GE(11, 2, 0)
+-  PETSC_CUPM_ALIAS_FUNCTION(cupmMemsetAsync, cudaMemsetAsync)
+-  #else
+   PETSC_CUPM_ALIAS_FUNCTION_GOBBLE(cupmMemsetAsync, cudaMemset, 1)
+-  #endif
+   PETSC_CUPM_ALIAS_FUNCTION(cupmMemcpy2D, cudaMemcpy2D)
+   PETSC_CUPM_ALIAS_FUNCTION_GOBBLE(cupmMemcpy2DAsync, cudaMemcpy2DAsync, 1)
+   PETSC_CUPM_ALIAS_FUNCTION(cupmMemset2D, cudaMemset2D)
+diff --git a/src/sys/objects/device/impls/cupm/cupmcontext.hpp b/src/sys/objects/device/impls/cupm/cupmcontext.hpp
+index e21262c6237..8187fd7b6c6 100644
+--- a/src/sys/objects/device/impls/cupm/cupmcontext.hpp
++++ b/src/sys/objects/device/impls/cupm/cupmcontext.hpp
+@@ -246,8 +246,8 @@ inline PetscErrorCode DeviceContext<T>::initialize(PetscDevice device) noexcept
+     cupmMemPool_t mempool;
+ 
+     initialized_ = true;
+-    PetscCallCUPM(cupmDeviceGetMemPool(&mempool, static_cast<int>(device->deviceId)));
+-    PetscCallCUPM(cupmMemPoolSetAttribute(mempool, cupmMemPoolAttrReleaseThreshold, &threshold));
++    // PetscCallCUPM(cupmDeviceGetMemPool(&mempool, static_cast<int>(device->deviceId)));
++    // PetscCallCUPM(cupmMemPoolSetAttribute(mempool, cupmMemPoolAttrReleaseThreshold, &threshold));
+     blashandles_.fill(nullptr);
+     solverhandles_.fill(nullptr);
+     PetscCall(PetscRegisterFinalize(finalize_));
+diff --git a/src/sys/objects/device/impls/cupm/cupmdevice.cxx b/src/sys/objects/device/impls/cupm/cupmdevice.cxx
+index 3e82abfc125..c2794417284 100644
+--- a/src/sys/objects/device/impls/cupm/cupmdevice.cxx
++++ b/src/sys/objects/device/impls/cupm/cupmdevice.cxx
+@@ -52,9 +52,13 @@ PetscErrorCode Device<T>::DeviceInternal::initialize() noexcept
+   PetscFunctionBegin;
+   if (initialized()) PetscFunctionReturn(PETSC_SUCCESS);
+   devInitialized_ = true;
++  printf("Hey calling setDeviceFlags with flags = %d.\n", cupmDeviceMapHost);
++  int my_err = cupmSetDeviceFlags(cupmDeviceMapHost);
++  printf("Hey my_err = %d.\n", my_err);
++  printf("Hey! cupmErrorSetOnActiveProcess = %d.\n", cupmErrorSetOnActiveProcess);
+   // need to do this BEFORE device has been set, although if the user
+   // has already done this then we just ignore it
+-  if (cupmSetDeviceFlags(cupmDeviceMapHost) == cupmErrorSetOnActiveProcess) {
++  if (my_err == cupmErrorSetOnActiveProcess) {
+     // reset the error if it was cupmErrorSetOnActiveProcess
+     const auto PETSC_UNUSED unused = cupmGetLastError();
+   } else PetscCallCUPM(cupmGetLastError());
+@@ -280,13 +284,17 @@ PetscErrorCode Device<T>::init_device_id_(PetscInt *inid) const noexcept
+ 
+   PetscFunctionBegin;
+   PetscCheck(defaultDevice_ != PETSC_CUPM_DEVICE_NONE, PETSC_COMM_SELF, PETSC_ERR_ARG_WRONGSTATE, "Trying to retrieve a %s PetscDevice when it has been disabled", cupmName());
++  printf("The default device is: %d.\n", defaultDevice_);
+   PetscCheck(defaultDevice_ >= 0, PETSC_COMM_SELF, PETSC_ERR_GPU, "Cannot lazily initialize PetscDevice: %s error %d (%s) : %s", cupmName(), static_cast<PetscErrorCode>(cerr), cupmGetErrorName(cerr), cupmGetErrorString(cerr));
+   PetscAssert(static_cast<decltype(devices_.size())>(id) < devices_.size(), PETSC_COMM_SELF, PETSC_ERR_ARG_OUTOFRANGE, "Only supports %zu number of devices but trying to get device with id %d", devices_.size(), id);
++  printf("Hello World.\n");
++  printf("ID = %d.\n", id);
+ 
+   if (!devices_[id]) devices_[id] = util::make_unique<DeviceInternal>(id);
+   PetscAssert(id == devices_[id]->id(), PETSC_COMM_SELF, PETSC_ERR_PLIB, "Entry %d contains device with mismatching id %d", id, devices_[id]->id());
+   PetscCall(devices_[id]->initialize());
+   *inid = id;
++  printf("The ID was: %d\n.", id);
+   PetscFunctionReturn(PETSC_SUCCESS);
+ }

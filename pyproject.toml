@@ -33,6 +33,7 @@ dependencies = [
     "numpy",
     "pytz",
     "tabulate",
+    "siphash24",
 ]
 
 [project.urls]
@@ -122,8 +123,6 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = [
-  "pytato.transform",
-  "pytato.scalar_expr",
 ]
 allow_subclassing_any = true
 
