@@ -17,8 +17,9 @@ class Op(enum.Enum):
 
 @enum.unique
 class Device(enum.Enum):
-    K40 = 0
-    TITANV = 1
+    K40M = 0
+    K40C = 1
+    TITANV = 2
 
 
 def op_name(op: Op) -> str:
@@ -37,8 +38,10 @@ def op_name(op: Op) -> str:
 
 
 def device_name(device: Device) -> str:
-    if device == Device.K40:
-        return "NVIDIA TESLA K40"
+    if device == Device.K40M:
+        return "Tesla K40m"
+    elif device == Device.K40C:
+        return "Tesla K40c"
     elif device == Device.TITANV:
         return "NVIDIA TITAN V"
     else:
@@ -58,7 +61,7 @@ def name_to_device(name: str) -> Device:
     for dev in Device:
         if device_name(dev).lower() == name:
             return dev
-    raise AssertionError("unreachable")
+    raise AssertionError(f"unknown device={name}")
 
 
 @cache
@@ -112,7 +115,7 @@ def get_roofline_gflops(
         nfootprint_bytes,
     )
 
-    if device == Device.K40:
+    if device in [Device.K40M, Device.K40C]:
         fpeak = 1430  # GFlops/s
         beta_peak_global = 288  # GB/s
         beta_peak_shared = 1000  # GB/s
