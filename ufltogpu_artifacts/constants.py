@@ -21,6 +21,11 @@ __doc__ = """
 
     A mapping from ``(Operator, dim, degree)`` to the number of local memory
     accesses as per the roofline model kernel in Sec 5.1 of the paper.
+
+.. data:: num_transform_candidates
+
+    A mapping from ``(Operator, dim, degree)`` to the number of transformation
+    candidates in our search space.
 """
 
 
@@ -242,4 +247,78 @@ local_nbytes_accesses_per_cell = {
     (Op.HYPERELASTICITY, 3, 4): 204960,
     (Op.HYPERELASTICITY, 3, 5): 1959552,
     (Op.HYPERELASTICITY, 3, 6): 5366592,
+}
+
+
+num_transform_candidates = {
+    (Op.MASS, 2, 1): 1,
+    (Op.MASS, 2, 2): 3061,
+    (Op.MASS, 2, 3): 13321,
+    (Op.MASS, 2, 4): 15121,
+    (Op.MASS, 2, 5): 36541,
+    (Op.MASS, 2, 6): 67861,
+    (Op.MASS, 2, 7): 74341,
+    (Op.MASS, 2, 8): 148411,
+    (Op.MASS, 3, 1): 1261,
+    (Op.MASS, 3, 2): 13141,
+    (Op.MASS, 3, 3): 32941,
+    (Op.MASS, 3, 4): 79021,
+    (Op.MASS, 3, 5): 252541,
+    (Op.MASS, 3, 6): 624061,
+    (Op.LAPLACE, 2, 1): 1,
+    (Op.LAPLACE, 2, 2): 1711,
+    (Op.LAPLACE, 2, 3): 6841,
+    (Op.LAPLACE, 2, 4): 13141,
+    (Op.LAPLACE, 2, 5): 21241,
+    (Op.LAPLACE, 2, 6): 46621,
+    (Op.LAPLACE, 2, 7): 64081,
+    (Op.LAPLACE, 2, 8): 108181,
+    (Op.LAPLACE, 3, 1): 1,
+    (Op.LAPLACE, 3, 2): 3781,
+    (Op.LAPLACE, 3, 3): 15841,
+    (Op.LAPLACE, 3, 4): 39961,
+    (Op.LAPLACE, 3, 5): 142921,
+    (Op.LAPLACE, 3, 6): 393661,
+    (Op.HELMHOLTZ, 2, 1): 1,
+    (Op.HELMHOLTZ, 2, 2): 3061,
+    (Op.HELMHOLTZ, 2, 3): 13321,
+    (Op.HELMHOLTZ, 2, 4): 15121,
+    (Op.HELMHOLTZ, 2, 5): 36541,
+    (Op.HELMHOLTZ, 2, 6): 67861,
+    (Op.HELMHOLTZ, 2, 7): 74341,
+    (Op.HELMHOLTZ, 2, 8): 148411,
+    (Op.HELMHOLTZ, 3, 1): 1,
+    (Op.HELMHOLTZ, 3, 2): 13141,
+    (Op.HELMHOLTZ, 3, 3): 32941,
+    (Op.HELMHOLTZ, 3, 4): 79021,
+    (Op.HELMHOLTZ, 3, 5): 252541,
+    (Op.HELMHOLTZ, 3, 6): 624061,
+    (Op.ELASTICITY, 2, 1): 1,
+    (Op.ELASTICITY, 2, 2): 1711,
+    (Op.ELASTICITY, 2, 3): 6841,
+    (Op.ELASTICITY, 2, 4): 13141,
+    (Op.ELASTICITY, 2, 5): 21241,
+    (Op.ELASTICITY, 2, 6): 46621,
+    (Op.ELASTICITY, 2, 7): 64081,
+    (Op.ELASTICITY, 2, 8): 108181,
+    (Op.ELASTICITY, 3, 1): 1,
+    (Op.ELASTICITY, 3, 2): 3781,
+    (Op.ELASTICITY, 3, 3): 15841,
+    (Op.ELASTICITY, 3, 4): 39961,
+    (Op.ELASTICITY, 3, 5): 142921,
+    (Op.ELASTICITY, 3, 6): 393661,
+    (Op.HYPERELASTICITY, 2, 1): 1,
+    (Op.HYPERELASTICITY, 2, 2): 3061,
+    (Op.HYPERELASTICITY, 2, 3): 15841,
+    (Op.HYPERELASTICITY, 2, 4): 37441,
+    (Op.HYPERELASTICITY, 2, 5): 85231,
+    (Op.HYPERELASTICITY, 2, 6): 153181,
+    (Op.HYPERELASTICITY, 2, 7): 208081,
+    (Op.HYPERELASTICITY, 2, 8): 373951,
+    (Op.HYPERELASTICITY, 3, 1): 1,
+    (Op.HYPERELASTICITY, 3, 2): 13141,
+    (Op.HYPERELASTICITY, 3, 3): 60211,
+    (Op.HYPERELASTICITY, 3, 4): 219961,
+    (Op.HYPERELASTICITY, 3, 5): 1946521,
+    (Op.HYPERELASTICITY, 3, 6): 5279221,
 }
