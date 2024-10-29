@@ -11,6 +11,7 @@ from ufltogpu_artifacts.constants import (
     flops_per_cell,
     local_nbytes_accesses_per_cell,
     nfootprint_bytes,
+    num_transform_candidates
 )
 from ufltogpu_artifacts.core import (
     Op,
@@ -270,6 +271,84 @@ def verify_local_nbytes_accesses_per_cell() -> None:
     print("Verified local_nbytes_accesses_per_cell for all reference values. ✨ 🦾 ✨")
 
 
+def _get_number_of_transform_candidates(p: op2.AbstractParloop) -> int:
+    from pyop2.codegen.rep2loopy import generate
+    from pyop2.transforms.auto_tiling import (
+        MetadataMismatchError,
+        ParametricTilingCandidateGenerator,
+        _preprocess_tunit_for_autotiling,
+    )
+    from pyop2.transforms.gpu_utils import preprocess_t_unit_for_gpu
+
+    t_unit = generate(p.global_kernel.builder)
+    t_unit = preprocess_t_unit_for_gpu(t_unit)
+    t_unit = _preprocess_tunit_for_autotiling(t_unit)
+
+    try:
+        candidate_generator = ParametricTilingCandidateGenerator(t_unit, 10)
+        return len(candidate_generator._get_all_configurations()) + 1
+    except MetadataMismatchError:
+        # Only SWIPC possible.
+        return 1
+
+
+def print_number_of_transform_candidates() -> None:
+    """
+    Prints the :data:`ufltogpu_artifacts.num_transform_candidates` as a python dict.
+    """
+    import black
+
+    BLACK_MODE = black.Mode(target_versions={black.TargetVersion.PY311}, line_length=84)
+
+    code = ""
+
+    code += "num_transform_candidates = {\n"
+
+    for op in [
+        Op.MASS,
+        Op.LAPLACE,
+        Op.HELMHOLTZ,
+        Op.ELASTICITY,
+        Op.HYPERELASTICITY,
+    ]:
+        for dim in [2, 3]:
+            p_lo, p_hi = get_p_lo_hi(dim)
+            for p in range(p_lo, p_hi + 1):
+                A, V = get_bilinear_form(1, dim, op, p)
+                x = fd.Function(V)
+                y = fd.Function(V)
+                assembler = fd.get_assembler(fd.action(A, x), tensor=y)
+                (parloop,) = assembler.parloops(y)
+                num_candidates = _get_number_of_transform_candidates(parloop)
+                code += f"({op}, {dim}, {p}): {num_candidates},\n"
+                print(f"Done with {op=}, {dim=}, {p=}")
+        code += "\n"
+
+    code += "}"
+    print(black.format_file_contents(code, fast=False, mode=BLACK_MODE))
+
+
+def verify_num_transform_candidates() -> None:
+    """
+    Verifies the correctness of entries in
+    :data:`ufltogpu_artifacts.num_transform_candidates`.
+    """
+    for (op, dim, p), ref_ncandidates in num_transform_candidates.items():
+        A, V = get_bilinear_form(1, dim, op, p)
+        x = fd.Function(V)
+        y = fd.Function(V)
+        assembler = fd.get_assembler(fd.action(A, x), tensor=y)
+        (parloop,) = assembler.parloops(y)
+        empirical_ncanidates = _get_number_of_transform_candidates(parloop)
+        if np.testing.assert_array_equal(empirical_ncanidates, ref_ncandidates):
+            raise RuntimeError(
+                f"For {op=}, {dim=}, {p=}: "
+                f"Expected = {ref_ncandidates}, Measured = {empirical_ncanidates}"
+            )
+
+    print("Verified num_transform_candidates for all reference values. ✨ 🦾 ✨")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Utility to verify the tabulated data used in Roofline computation."
@@ -291,6 +370,15 @@ if __name__ == "__main__":
             "Do not verify the local memory accesses per cell for the action operators."
         ),
     )
+
+    parser.add_argument(
+        "--no-verify-num-transform-candidates",
+        action="store_true",
+        help=(
+            "Do not verify the number of transform candidates for the action operators."
+        ),
+    )
+
     args = parser.parse_args()
 
     if not args.no_verify_flops_per_cell:
@@ -299,3 +387,5 @@ if __name__ == "__main__":
         verify_nfootprint_bytes()
     if not args.no_verify_local_bytes_accesses_per_cell:
         verify_local_nbytes_accesses_per_cell()
+    if not args.no_verify_num_transform_candidates:
+        verify_num_transform_candidates()
