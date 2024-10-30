@@ -187,7 +187,8 @@ if __name__ == "__main__":
         required=True,
     )
     parser.add_argument(
-        "--device", type=str, choices=[device_name(dev) for dev in Device]
+        "--device", type=str, choices=[device_name(dev) for dev in Device],
+        required=True,
     )
     parser.add_argument(
         "--db_path",
