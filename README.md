@@ -71,6 +71,21 @@ options:
   -o <file>             Place the generated plots in <file>. Plot is displayed using X-window if none passed.
 ```
 
+### HOWTO: Plot the number of transform candidates
+```console
+$ python num_parameters_plotter.py -h
+usage: num_parameters_plotter.py [-h] --op {Mass,Laplace,Helmholtz,Elasticity,Hyperelasticity} [{Mass,Laplace,Helmholtz,Elasticity,Hyperelasticity} ...] [--dim {2,3}] --p_range X Y [-o <file>]
+
+Utility to plot number of transform candidates.
+
+options:
+  -h, --help            show this help message and exit
+  --op {Mass,Laplace,Helmholtz,Elasticity,Hyperelasticity} [{Mass,Laplace,Helmholtz,Elasticity,Hyperelasticity} ...]
+  --dim {2,3}
+  --p_range X Y         Number of transform candidates corresponding to polynomial degrees {X, X+1, ..., Y} are plotted.
+  -o <file>             Place the generated plots in <file>. Plot is displayed using X-window if none passed.
+```
+
 ### HOWTO: Verify the constants used in Roofline calculations
 
 ```console
