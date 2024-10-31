@@ -1,19 +1,21 @@
 from __future__ import annotations
 
 import argparse
+
 import matplotlib.pyplot as plt
 from matplotlib import rc
 
+from ufltogpu_artifacts.constants import num_transform_candidates
 from ufltogpu_artifacts.core import (
     Op,
     name_to_op,
     op_name,
 )
-from ufltogpu_artifacts.constants import num_transform_candidates
 
 
 rc("text", usetex=True)
 plt.style.use("seaborn-v0_8")
+
 
 def main(
     operators: list[Op],
@@ -26,7 +28,7 @@ def main(
     assert len(markers) >= len(operators)
     for op, marker in zip(operators, markers):
         xs = list(range(p_lo, p_hi+1))
-        ys = [num_transform_candidates[(op, dim, p)]
+        ys = [num_transform_candidates[op, dim, p]
               for p in range(p_lo, p_hi+1)]
         plt.semilogy(xs, ys, label=op_name(op), marker=marker)
 
