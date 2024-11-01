@@ -1,21 +1,23 @@
 ## UFL-to-GPU Reproducer toolkit
 
-This repository contains the necessary code to reproduce the results presented
-in the paper "[UFL-to-GPU: Near the Roofline](#)". Follow the steps below to
-reproduce the reported results.
+This repository provides the code and empirical data required to reproduce the
+results presented in the paper "[UFL-to-GPU: Near the Roofline](#)." The
+empirical data is available in the SQL database located at
+[data/results.db](data/results.db). Follow the steps below to reproduce the
+reported results.
 
 1. Install `firedrake` project as follows, noting that
    several sub-packages use branches that deviate from
    'mainline' Firedrake. Note that the bulk of the work
    described in the paper exists on those branches.
     ```console
-    > curl -O https://raw.githubusercontent.com/firedrakeproject/firedrake/gpu/scripts/firedrake-install
+    > curl -O https://raw.githubusercontent.com/kaushikcfd/ufltogpu-artifacts/refs/heads/main/data/firedrake-install
 
-    > python3 firedrake-install --venv-name firedrake_gpu --minimal-petsc --no-package-manager --package-branch firedrake gpu --package-branch tsfc gpu --package-branch pyop2 auto_tiling --cuda --mpicc=/usr/bin/mpicc.mpich --mpicxx=/usr/bin/mpicxx.mpich --mpif90=/usr/bin/mpif90.mpich --mpiexec=/usr/bin/mpiexec.mpich
+    > python3 firedrake-install --doi <DOI_ID> --cuda --mpicc=/usr/bin/mpicc.mpich --mpicxx=/usr/bin/mpicxx.mpich --mpif90=/usr/bin/mpif90.mpich --mpiexec=/usr/bin/mpiexec.mpich
     ```
 2. Clone this repository and build it.
    ```console
-   > git clone https://github.com/kaushikcfd/ufltogpu-artifacts
+   > git clone https://github.com/kaushikcfd/ufltogpu-artifacts --branch v2024.0
 
    > cd ufltogpu-artifacts
 
