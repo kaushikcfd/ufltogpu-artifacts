@@ -93,7 +93,7 @@ def main(
     _, plt_axes = plt.subplots(
         len(operators),
         1,
-        figsize=(5, 6 * len(operators)),
+        figsize=(5, 3 * len(operators)),
         squeeze=True,
         gridspec_kw={"hspace": 0.35},
     )
