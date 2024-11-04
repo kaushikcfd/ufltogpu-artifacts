@@ -13,7 +13,7 @@ reported results.
     ```console
     > curl -O https://raw.githubusercontent.com/kaushikcfd/ufltogpu-artifacts/refs/heads/main/data/firedrake-install
 
-    > python3 firedrake-install --doi <DOI_ID> --cuda --mpicc=/usr/bin/mpicc.mpich --mpicxx=/usr/bin/mpicxx.mpich --mpif90=/usr/bin/mpif90.mpich --mpiexec=/usr/bin/mpiexec.mpich
+    > python3 firedrake-install --doi 10.5281/zenodo.14029412 --cuda --mpicc=/usr/bin/mpicc.mpich --mpicxx=/usr/bin/mpicxx.mpich --mpif90=/usr/bin/mpif90.mpich --mpiexec=/usr/bin/mpiexec.mpich
     ```
 2. Clone this repository and build it.
    ```console
