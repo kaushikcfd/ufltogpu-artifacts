@@ -11,16 +11,10 @@ reported results.
    'mainline' Firedrake. Note that the bulk of the work
    described in the paper exists on those branches.
     ```console
-    > curl -O https://raw.githubusercontent.com/kaushikcfd/ufltogpu-artifacts/refs/heads/main/data/firedrake-install
-
-    > python3 firedrake-install --doi 10.5281/zenodo.14029412 --cuda --mpicc=/usr/bin/mpicc.mpich --mpicxx=/usr/bin/mpicxx.mpich --mpif90=/usr/bin/mpif90.mpich --mpiexec=/usr/bin/mpiexec.mpich
+    > python3 data/firedrake-install --doi 10.5281/zenodo.14029412 --cuda --mpicc=/usr/bin/mpicc.mpich --mpicxx=/usr/bin/mpicxx.mpich --mpif90=/usr/bin/mpif90.mpich --mpiexec=/usr/bin/mpiexec.mpich
     ```
 2. Clone this repository and build it.
    ```console
-   > git clone https://github.com/kaushikcfd/ufltogpu-artifacts --branch v2024.0
-
-   > cd ufltogpu-artifacts
-
    > source ${FIREDRAKE_VENV}/bin/activate
    > pip install -e .
    ```
