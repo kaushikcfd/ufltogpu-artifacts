@@ -777,7 +777,6 @@ def get_petsc_options(minimal=False):
         if args.cuda_dir:
             petsc_options.add('--with-cuda-dir={}'.format(args.cuda_dir))
         petsc_options.add('--with-cudac={}'.format(args.cudac))
-        petsc_options.add('--with-cuda-arch=35')
         if args.cuda_compile_flags:
             petsc_options.add('--CUDAFLAGS={}'.format(args.cuda_compile_flags))
     else:
