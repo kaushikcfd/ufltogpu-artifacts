@@ -11,7 +11,7 @@ reported results.
    'mainline' Firedrake. Note that the bulk of the work
    described in the paper exists on those branches.
     ```console
-    > python3 data/firedrake-install --doi 10.5281/zenodo.14029412 --cuda --mpicc=/usr/bin/mpicc.mpich --mpicxx=/usr/bin/mpicxx.mpich --mpif90=/usr/bin/mpif90.mpich --mpiexec=/usr/bin/mpiexec.mpich
+    > python3 data/firedrake-install --doi 10.5281/zenodo.14029412 --cuda --minimal-petsc --mpicc=/usr/bin/mpicc.mpich --mpicxx=/usr/bin/mpicxx.mpich --mpif90=/usr/bin/mpif90.mpich --mpiexec=/usr/bin/mpiexec.mpich
     ```
 2. Clone this repository and build it.
    ```console
