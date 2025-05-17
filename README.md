@@ -107,7 +107,7 @@ support in Firedrake:
 [Firedrake#1605](https://github.com/firedrakeproject/firedrake/pull/1605) and
 [PyOP2#574](https://github.com/OP2/PyOP2/pull/574). Additionally, our [patch for
 the auto-tiling
-algorithm](https://github.com/kaushikcfd/PyOP2/compare/gpu...kaushikcfd:PyOP2:auto_tiling)
+algorithm](https://github.com/op2/PyOP2/compare/gpu...auto_tiling)
 builds upon the proposed changes to PyOP2.
 
 ### Troubleshooting

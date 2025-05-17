@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 
 import matplotlib.pyplot as plt
-from matplotlib import rc
 
 from ufltogpu_artifacts.constants import num_transform_candidates
 from ufltogpu_artifacts.core import (
@@ -13,8 +12,19 @@ from ufltogpu_artifacts.core import (
 )
 
 
-rc("text", usetex=True)
 plt.style.use("seaborn-v0_8")
+fontsize = 22
+plt.rcParams.update(
+    {
+        "text.usetex": True,
+        "font.size": fontsize,
+        "axes.titlesize": fontsize,
+        "axes.labelsize": fontsize - 2,
+        "legend.fontsize": fontsize - 2,
+        "xtick.labelsize": fontsize,
+        "ytick.labelsize": fontsize,
+    }
+)
 
 
 def main(
@@ -35,6 +45,7 @@ def main(
     plt.xlabel("$p$")
     plt.ylabel("Number of transform candidates")
     plt.legend()
+    plt.tight_layout()
 
     if file_to_save_in is not None:
         plt.savefig(file_to_save_in)
