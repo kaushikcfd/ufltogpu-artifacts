@@ -11,24 +11,18 @@ from ufltogpu_artifacts.core import get_roofline_gflops, name_to_device, name_to
 from ufltogpu_artifacts.sql_utils import create_or_verify_db
 
 
-fontsize = 24
+plt.style.use("seaborn-v0_8")
 plt.rcParams.update(
     {
         "text.usetex": True,
-        "font.size": fontsize,
-        "axes.titlesize": fontsize,
-        "legend.fontsize": fontsize - 2,
-        "xtick.labelsize": fontsize,
-        "ytick.labelsize": fontsize,
     }
 )
-plt.style.use("seaborn-v0_8")
 
 
 def main(conn: sql.Connection, file_to_save_in: None | str):
     cursor = conn.cursor()
     windows = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-    xticks = [rf"\Large {int(100*window)}" for window in windows]
+    yticks = [rf"\Large {int(100*window)}" for window in windows]
     markers = ["o-", "^-", "s-", "p-", "*-"]
 
     cursor.execute("SELECT device_name FROM AUTOTILING_TIMES;")
@@ -70,12 +64,12 @@ def main(conn: sql.Connection, file_to_save_in: None | str):
                 100 * ((flop_ratios_np >= window).mean())
             )
 
-        plt.plot(windows, cases_in_a_window, marker, label=r"\Large " + device)
+        plt.plot(cases_in_a_window, windows, marker, label=r"\Large " + device)
 
-    plt.xlabel(r"\Large $x$\% of roofline")
-    plt.ylabel(r"\Large $y$\% of test cases")
-    plt.title(r"\Large $y$\% test cases performing at least $x$\% of the roofline")
-    plt.xticks(windows, xticks)
+    plt.xlabel(r"\Large $x$\% of test cases")
+    plt.ylabel(r"\Large $y$\% of roofline")
+    plt.title(r"\Large $x$\% test cases performing at least $y$\% of the roofline")
+    plt.yticks(windows, yticks)
 
     plt.legend()
     if file_to_save_in:
