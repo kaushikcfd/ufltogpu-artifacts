@@ -1,7 +1,8 @@
 ## UFL-to-GPU Reproducer toolkit
 
 This repository provides the code and empirical data required to reproduce the
-results presented in the paper "[UFL-to-GPU: Near the Roofline](#)." The
+results presented in the paper "[Code Generation for Near-Roofline Finite Element Actions on GPUs from Symbolic Variational Forms
+](https://arxiv.org/abs/2506.17471)." The
 empirical data is available in the SQL database located at
 [data/results.db](data/results.db). Follow the steps below to reproduce the
 reported results.
