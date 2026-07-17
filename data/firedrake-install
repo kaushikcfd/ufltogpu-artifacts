@@ -748,6 +748,7 @@ def get_petsc_options(minimal=False):
     elif osname == "Linux":
         # PETSc requires cmake version 3.18.1 or higher.
         petsc_options.add("--download-cmake")
+        petsc_options.add("--CFLAGS=-std=gnu17")
 
     if (not options["minimal_petsc"]) and (not minimal):
         # Another sparse direct solver
@@ -791,7 +792,7 @@ def get_petsc_options(minimal=False):
 
     if options["complex"]:
         petsc_options.add('--with-scalar-type=complex')
-    else:
+    elif (not options["minimal_petsc"]) and (not minimal):
         # AMG
         petsc_options.add("--download-hypre")
 
@@ -1280,9 +1281,20 @@ def build_and_install_h5py():
 
 def build_and_install_libsupermesh(cc, cxx, f90, mpiexec):
     log.info("Installing libsupermesh")
-    url = "git+https://github.com/firedrakeproject/libsupermesh.git"
+    commit = "b80408ef8f5344e96b2e5426fbaf045447444dc5"
+    url = "git+https://github.com/firedrakeproject/libsupermesh.git@%s" % commit
     if os.path.exists("libsupermesh"):
-        changed = git_update("libsupermesh", url)
+        # pin libsupermesh to a commit that's known to be working.
+        with directory("libsupermesh"):
+            git_sha = check_output(["git", "rev-parse", "HEAD"]).strip()
+            if git_sha != commit:
+                log.info("Updating libsupermesh to pinned commit %s" % commit)
+                check_call(["git", "fetch", "origin"])
+                check_call(["git", "checkout", "-q", commit])
+                check_call(["git", "submodule", "update", "--recursive"])
+                changed = True
+            else:
+                changed = False
     else:
         git_clone(url)
         changed = True
@@ -1715,8 +1727,12 @@ if mode == "install":
     # We haven't activated the venv so we need to manually set the environment.
     os.environ["VIRTUAL_ENV"] = firedrake_env
 
-# Ensure pip, setuptools, hatchling and wheel are at the latest version.
-run_pip(["install", "-U", "setuptools"])
+# Ensure pip, hatchling and wheel are at the latest version.
+# setuptools is pinned to the last release that satisfies two conflicting
+# requirements: (a) petsc4py's conf/confpetsc.py  requires setuptools < 81
+# (b) pyadjoint's pyproject.toml requires setuptools > 78.1.1 -> pick a
+# version that satisfies it.
+run_pip(["install", "setuptools==80.10.2"])
 run_pip(["install", "-U", "hatch"])
 run_pip(["install", "-U", "editables"])
 run_pip(["install", "-U", "pip"])
@@ -1725,9 +1741,9 @@ run_pip(["install", "-U", "wheel"])
 # Extra numpy dependendencies, see
 # https://github.com/numpy/numpy/blob/main/pyproject.toml
 run_pip(["install", "-U", "meson-python>=0.15.0"])
-run_pip(["install", "-U", "Cython>=3.0.6"])
+run_pip(["install", "Cython==3.0.11"])
 
-run_pip(["install", "-U", "numpy"])
+run_pip(["install", "numpy==2.1.3"])
 
 # Loopy has additional build dependencies
 run_pip(["install", "-U", "scikit-build"])
