@@ -30,11 +30,10 @@ classifiers = [
     "Topic :: Utilities",
 ]
 dependencies = [
-    "numpy",
+    "numpy==2.1.3",  # must match the pin in data/firedrake-install, else pip breaks firedrake's compiled extensions
     "pytz",
     "tabulate",
     "siphash24",
-    "loopy@git+https://github.com/inducer/loopy.git@75e48829545e53b7b77902745c95b489d69521da",
 ]
 
 [project.urls]
@@ -45,10 +44,6 @@ Homepage = "https://github.com/kaushikcfd/ufltogpu_artifacts"
 include = [
     "ufltogpu_artifacts*",
 ]
-
-[tool.setuptools.package-dir]
-# https://github.com/Infleqtion/client-superstaq/pull/715
-"" = "."
 
 [tool.setuptools.package-data]
 pytools = [

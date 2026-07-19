@@ -20,6 +20,7 @@ class Device(enum.Enum):
     K40M = 0
     K40C = 1
     TITANV = 2
+    H200NVL = 3
 
 
 def op_name(op: Op) -> str:
@@ -44,6 +45,8 @@ def device_name(device: Device) -> str:
         return "Tesla K40c"
     elif device == Device.TITANV:
         return "NVIDIA TITAN V"
+    elif device == Device.H200NVL:
+        return "NVIDIA H200 NVL"
     else:
         raise AssertionError("unreachable")
 
@@ -123,6 +126,11 @@ def get_roofline_gflops(
         fpeak = 6144  # GFlops/s
         beta_peak_global = 653  # GB/s
         beta_peak_shared = 13800  # GB/s
+    elif device == Device.H200NVL:
+        # See <https://www.nvidia.com/en-in/data-center/h200/>.
+        fpeak = 30_000  # GFlops/s (no tensor core)
+        beta_peak_global = 4800  # GB/s
+        beta_peak_shared = 29700  # GB/s
     else:
         raise ValueError(f"Unknown device {device_name(device)}.")
 
