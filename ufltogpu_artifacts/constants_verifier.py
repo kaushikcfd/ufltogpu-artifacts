@@ -10,7 +10,7 @@ from tsfc import compile_form
 from ufltogpu_artifacts.constants import (
     flops_per_cell,
     local_nbytes_accesses_per_cell,
-    nfootprint_bytes,
+    nfootprint_bytes_per_cell,
     num_transform_candidates
 )
 from ufltogpu_artifacts.core import (
@@ -114,7 +114,8 @@ def _get_parloop_nfootprint_bytes(p: op2.AbstractParloop) -> int:
 
 def print_nfootprint_bytes() -> None:
     """
-    Prints the :data:`ufltogpu_artifacts.flops_per_cell` as a python dict.
+    Prints the :data:`ufltogpu_artifacts.nfootprint_bytes_per_cell` as a
+    python dict.
     """
     import black
 
@@ -122,7 +123,7 @@ def print_nfootprint_bytes() -> None:
 
     code = ""
 
-    code += "nfootprint_bytes = {\n"
+    code += "nfootprint_bytes_per_cell = {\n"
 
     for op in [
         Op.MASS,
@@ -142,48 +143,35 @@ def print_nfootprint_bytes() -> None:
                 assembler = fd.get_assembler(fd.action(A, x))
                 (parloop,) = assembler.parloops(y)
                 nbytes = _get_parloop_nfootprint_bytes(parloop)
-                code += f"({op}, {dim}, {p}, {num_cells}): {nbytes},\n"
+                code += f"({op}, {dim}, {p}): {nbytes / num_cells},\n"
         code += "\n"
 
     code += "}"
     print(black.format_file_contents(code, fast=False, mode=BLACK_MODE))
 
 
-def _get_nel1d_from_num_cells(dim: int, num_cells: int) -> int:
-    """
-    Returns the number of cells with a hypercube in *dim*-dimensions with
-    *nel_1d+1* vertices along each edge of the cube. We choose Firedrake's
-    "UnitCubeMesh" spatial discretization for computing the total number
-    of cells in the mesh.
-    """
-    if dim == 2:
-        return round((num_cells / 2) ** (1 / 2))
-    elif dim == 3:
-        return round((num_cells / 6) ** (1 / 3))
-    else:
-        raise ValueError(f"{dim=}")
-
-
 def verify_nfootprint_bytes() -> None:
     """
     Verifies the correctness of entries in
-    :data:`ufltogpu_artifacts.nfootprint_bytes`.
+    :data:`ufltogpu_artifacts.nfootprint_bytes_per_cell`.
     """
-    for (op, dim, p, num_cells), ref_nbytes in nfootprint_bytes.items():
-        nel_1d = _get_nel1d_from_num_cells(dim, num_cells)
+    for (op, dim, p), ref_nbytes_per_cell in nfootprint_bytes_per_cell.items():
+        nel_1d = get_nel1d_for_reported_data(dim)
+        num_cells = get_num_cells(dim, nel_1d)
         A, V = get_bilinear_form(nel_1d, dim, op, p)
         x = fd.Function(V)
         y = fd.Function(V)
         assembler = fd.get_assembler(fd.action(A, x))
         (parloop,) = assembler.parloops(y)
-        empirical_nbytes = _get_parloop_nfootprint_bytes(parloop)
-        if np.testing.assert_array_equal(empirical_nbytes, ref_nbytes):
+        empirical_nbytes_per_cell = _get_parloop_nfootprint_bytes(parloop) / num_cells
+        if np.testing.assert_array_equal(empirical_nbytes_per_cell, ref_nbytes_per_cell):
             raise RuntimeError(
-                f"For {op=}, {dim=}, {p=}, {num_cells=}: "
-                f"Expected = {ref_nbytes}, Measured = {empirical_nbytes}"
+                f"For {op=}, {dim=}, {p=}: "
+                f"Expected = {ref_nbytes_per_cell}, "
+                f"Measured = {empirical_nbytes_per_cell}"
             )
 
-    print("Verified nfootprint_bytes for all reference values. ✨ 🦾 ✨")
+    print("Verified nfootprint_bytes_per_cell for all reference values. ✨ 🦾 ✨")
 
 
 def _get_roofline_local_nbytes_per_cell_for_fem_kernel(p: op2.AbstractParloop) -> float:

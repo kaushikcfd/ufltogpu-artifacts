@@ -115,7 +115,7 @@ def get_roofline_gflops(
     from .constants import (
         flops_per_cell,
         local_nbytes_accesses_per_cell,
-        nfootprint_bytes,
+        nfootprint_bytes_per_cell,
     )
 
     if device in [Device.K40M, Device.K40C]:
@@ -129,13 +129,13 @@ def get_roofline_gflops(
     elif device == Device.H200NVL:
         # See <https://www.nvidia.com/en-in/data-center/h200/>.
         fpeak = 30_000  # GFlops/s (no tensor core)
-        beta_peak_global = 4800  # GB/s
-        beta_peak_shared = 29700  # GB/s
+        beta_peak_global = 3800  # GB/s from SHOC::writeCoalescedGlobalMemory.
+        beta_peak_shared = 23_000  # GB/s  from SHOC::readLocalMemory
     else:
         raise ValueError(f"Unknown device {device_name(device)}.")
 
     flops_per_cell_for_op = flops_per_cell[op, dim, deg]
-    nglobal_nbytes_per_cell = nfootprint_bytes[op, dim, deg, num_cells] / num_cells
+    nglobal_nbytes_per_cell = nfootprint_bytes_per_cell[op, dim, deg]
     nlocal_nbytes_per_cell = local_nbytes_accesses_per_cell[op, dim, deg]
 
     flops_global_bw = flops_per_cell_for_op * (
