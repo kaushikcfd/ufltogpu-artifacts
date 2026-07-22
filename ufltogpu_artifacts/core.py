@@ -129,8 +129,8 @@ def get_roofline_gflops(
     elif device == Device.H200NVL:
         # See <https://www.nvidia.com/en-in/data-center/h200/>.
         fpeak = 30_000  # GFlops/s (no tensor core)
-        beta_peak_global = 3800  # GB/s from SHOC::writeCoalescedGlobalMemory.
-        beta_peak_shared = 23_000  # GB/s  from SHOC::readLocalMemory
+        beta_peak_global = 4800  # GB/s
+        beta_peak_shared = 29_700  # GB/s for 1785 MHz clock freq.
     else:
         raise ValueError(f"Unknown device {device_name(device)}.")
 
