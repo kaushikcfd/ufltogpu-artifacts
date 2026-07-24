@@ -183,7 +183,7 @@ if __name__ == "__main__":
         type=str,
         nargs="*",
         default=[],
-        help="",
+        help="List of operators whose performance is to be evaluated.",
         choices=[
             op_name(Op.MASS),
             op_name(Op.LAPLACE),
