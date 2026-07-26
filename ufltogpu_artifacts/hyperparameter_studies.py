@@ -15,7 +15,7 @@ os.environ["LOOPY_NO_CACHE"] = "1"
 import pyop2.transforms.auto_tiling
 from tabulate import tabulate
 
-import firedrake as fd  # noqa: F401 (import for PETSc to init ctx.)
+import firedrake as fd  # ruff: ignore[unused-import] (import for PETSc to init ctx.)
 
 from ufltogpu_artifacts.core import Op, get_nel1d_for_reported_data, name_to_op, op_name
 from ufltogpu_artifacts.timings_recorder import get_flops, get_runtime_in_s
@@ -61,6 +61,74 @@ def main(
     p_hi: int,
 ) -> None:
     eta_alias_max_values = [0, 0.5, 0.6, 0.7, 0.8, 0.9]
+    eta_simd_max_values = [0, 0.5, 0.7, 0.9, 0.97, 0.99]
+    wg_max_values = [64, 128, 256, 512]
+
+    perf_table: dict[str, dict[float, str]] = {}
+
+    for wg_max in wg_max_values:
+        firedrake_clean()
+        pyop2.transforms.auto_tiling.NcNwi_MAX = wg_max
+
+        for dim in dims:
+            nel_1d = get_nel1d_for_reported_data(dim)
+            for op in operators:
+                for p in range(p_lo, p_hi + 1):
+                    t_op = get_runtime_in_s(op=op, dim=dim, p=p, nel_1d=nel_1d)
+                    nflops = get_flops(op=op, dim=dim, p=p, nel_1d=nel_1d)
+
+                    row_label = f"{op_name(op)}.{dim}D.P{p}"
+                    perf_table.setdefault(row_label, {})[wg_max] = (
+                        f"{1e-9 * (nflops / t_op):.1f}"
+                    )
+                    logger.critical(f"Done with {wg_max=}, {op=}, {dim=}, {p=}")
+
+    print(
+        tabulate(
+            [
+                (row_label, *(gflops[wg_max] for wg_max in wg_max_values))
+                for row_label, gflops in perf_table.items()
+            ],
+            headers=(
+                "Operator",
+                *(f"WG_MAX={wg_max}\nGFLOPS" for wg_max in wg_max_values),
+            ),
+            tablefmt="fancy_grid",
+        )
+    )
+
+    perf_table: dict[str, dict[float, str]] = {}
+
+    for eta_simd_max in eta_simd_max_values:
+        firedrake_clean()
+        pyop2.transforms.auto_tiling.ETA_SIMD_MAX = eta_simd_max
+
+        for dim in dims:
+            nel_1d = get_nel1d_for_reported_data(dim)
+            for op in operators:
+                for p in range(p_lo, p_hi + 1):
+                    t_op = get_runtime_in_s(op=op, dim=dim, p=p, nel_1d=nel_1d)
+                    nflops = get_flops(op=op, dim=dim, p=p, nel_1d=nel_1d)
+
+                    row_label = f"{op_name(op)}.{dim}D.P{p}"
+                    perf_table.setdefault(row_label, {})[eta_simd_max] = (
+                        f"{1e-9 * (nflops / t_op):.1f}"
+                    )
+                    logger.critical(f"Done with {eta_simd_max=}, {op=}, {dim=}, {p=}")
+
+    print(
+        tabulate(
+            [
+                (row_label, *(gflops[eta] for eta in eta_simd_max_values))
+                for row_label, gflops in perf_table.items()
+            ],
+            headers=(
+                "Operator",
+                *(f"ETA_SIMD_MAX={eta}\nGFLOPS" for eta in eta_simd_max_values),
+            ),
+            tablefmt="fancy_grid",
+        )
+    )
 
     perf_table: dict[str, dict[float, str]] = {}
 
@@ -74,6 +142,7 @@ def main(
                 for p in range(p_lo, p_hi + 1):
                     t_op = get_runtime_in_s(op=op, dim=dim, p=p, nel_1d=nel_1d)
                     nflops = get_flops(op=op, dim=dim, p=p, nel_1d=nel_1d)
+
                     row_label = f"{op_name(op)}.{dim}D.P{p}"
                     perf_table.setdefault(row_label, {})[eta_alias_max] = (
                         f"{1e-9 * (nflops / t_op):.1f}"
@@ -98,7 +167,8 @@ def main(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=(
-            "Utility to obtain parameter studies of Kulkarni, Kloeckner's auto-tiling strategy."
+            "Utility to obtain parameter studies of Kulkarni, "
+            "Kloeckner's auto-tiling strategy."
         )
     )
     parser.add_argument(
