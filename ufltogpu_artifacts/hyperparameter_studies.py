@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import argparse
 import logging
 import os
 from typing import Sequence
@@ -17,12 +16,18 @@ from tabulate import tabulate
 
 import firedrake as fd  # ruff: ignore[unused-import] (import for PETSc to init ctx.)
 
-from ufltogpu_artifacts.core import Op, get_nel1d_for_reported_data, name_to_op, op_name
+from ufltogpu_artifacts.core import Op, get_nel1d_for_reported_data, op_name
 from ufltogpu_artifacts.timings_recorder import get_flops, get_runtime_in_s
 
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.CRITICAL)
+
+CONFIGS: Sequence[tuple[Op, int, int]] = (
+    (Op.MASS, 2, 3),
+    (Op.HYPERELASTICITY, 2, 6),
+    (Op.ELASTICITY, 3, 4),
+)
 
 
 def firedrake_clean() -> None:
@@ -53,13 +58,7 @@ def firedrake_clean() -> None:
         assemble._make_global_kernel.cache.clear()
 
 
-def main(
-    *,
-    operators: Sequence[Op],
-    dims: Sequence[int],
-    p_lo: int,
-    p_hi: int,
-) -> None:
+def main() -> None:
     eta_alias_max_values = [0, 0.5, 0.6, 0.7, 0.8, 0.9]
     eta_simd_max_values = [0, 0.5, 0.7, 0.9, 0.97, 0.99]
     wg_max_values = [64, 128, 256, 512]
@@ -70,18 +69,16 @@ def main(
         firedrake_clean()
         pyop2.transforms.auto_tiling.NcNwi_MAX = wg_max
 
-        for dim in dims:
+        for op, dim, p in CONFIGS:
             nel_1d = get_nel1d_for_reported_data(dim)
-            for op in operators:
-                for p in range(p_lo, p_hi + 1):
-                    t_op = get_runtime_in_s(op=op, dim=dim, p=p, nel_1d=nel_1d)
-                    nflops = get_flops(op=op, dim=dim, p=p, nel_1d=nel_1d)
+            t_op = get_runtime_in_s(op=op, dim=dim, p=p, nel_1d=nel_1d)
+            nflops = get_flops(op=op, dim=dim, p=p, nel_1d=nel_1d)
 
-                    row_label = f"{op_name(op)}.{dim}D.P{p}"
-                    perf_table.setdefault(row_label, {})[wg_max] = (
-                        f"{1e-9 * (nflops / t_op):.1f}"
-                    )
-                    logger.critical(f"Done with {wg_max=}, {op=}, {dim=}, {p=}")
+            row_label = f"{op_name(op)}.{dim}D.P{p}"
+            perf_table.setdefault(row_label, {})[wg_max] = (
+                f"{1e-9 * (nflops / t_op):.1f}"
+            )
+            logger.critical(f"Done with {wg_max=}, {op=}, {dim=}, {p=}")
 
     print(
         tabulate(
@@ -103,18 +100,16 @@ def main(
         firedrake_clean()
         pyop2.transforms.auto_tiling.ETA_SIMD_MAX = eta_simd_max
 
-        for dim in dims:
+        for op, dim, p in CONFIGS:
             nel_1d = get_nel1d_for_reported_data(dim)
-            for op in operators:
-                for p in range(p_lo, p_hi + 1):
-                    t_op = get_runtime_in_s(op=op, dim=dim, p=p, nel_1d=nel_1d)
-                    nflops = get_flops(op=op, dim=dim, p=p, nel_1d=nel_1d)
+            t_op = get_runtime_in_s(op=op, dim=dim, p=p, nel_1d=nel_1d)
+            nflops = get_flops(op=op, dim=dim, p=p, nel_1d=nel_1d)
 
-                    row_label = f"{op_name(op)}.{dim}D.P{p}"
-                    perf_table.setdefault(row_label, {})[eta_simd_max] = (
-                        f"{1e-9 * (nflops / t_op):.1f}"
-                    )
-                    logger.critical(f"Done with {eta_simd_max=}, {op=}, {dim=}, {p=}")
+            row_label = f"{op_name(op)}.{dim}D.P{p}"
+            perf_table.setdefault(row_label, {})[eta_simd_max] = (
+                f"{1e-9 * (nflops / t_op):.1f}"
+            )
+            logger.critical(f"Done with {eta_simd_max=}, {op=}, {dim=}, {p=}")
 
     print(
         tabulate(
@@ -136,18 +131,16 @@ def main(
         firedrake_clean()
         pyop2.transforms.auto_tiling.ETA_ALIAS_MAX = eta_alias_max
 
-        for dim in dims:
+        for op, dim, p in CONFIGS:
             nel_1d = get_nel1d_for_reported_data(dim)
-            for op in operators:
-                for p in range(p_lo, p_hi + 1):
-                    t_op = get_runtime_in_s(op=op, dim=dim, p=p, nel_1d=nel_1d)
-                    nflops = get_flops(op=op, dim=dim, p=p, nel_1d=nel_1d)
+            t_op = get_runtime_in_s(op=op, dim=dim, p=p, nel_1d=nel_1d)
+            nflops = get_flops(op=op, dim=dim, p=p, nel_1d=nel_1d)
 
-                    row_label = f"{op_name(op)}.{dim}D.P{p}"
-                    perf_table.setdefault(row_label, {})[eta_alias_max] = (
-                        f"{1e-9 * (nflops / t_op):.1f}"
-                    )
-                    logger.critical(f"Done with {eta_alias_max=}, {op=}, {dim=}, {p=}")
+            row_label = f"{op_name(op)}.{dim}D.P{p}"
+            perf_table.setdefault(row_label, {})[eta_alias_max] = (
+                f"{1e-9 * (nflops / t_op):.1f}"
+            )
+            logger.critical(f"Done with {eta_alias_max=}, {op=}, {dim=}, {p=}")
 
     print(
         tabulate(
@@ -165,61 +158,4 @@ def main(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description=(
-            "Utility to obtain parameter studies of Kulkarni, "
-            "Kloeckner's auto-tiling strategy."
-        )
-    )
-    parser.add_argument(
-        "--op",
-        type=str,
-        nargs="*",
-        default=[],
-        help="List of operators whose performance is to be evaluated.",
-        choices=[
-            op_name(Op.MASS),
-            op_name(Op.LAPLACE),
-            op_name(Op.HELMHOLTZ),
-            op_name(Op.ELASTICITY),
-            op_name(Op.HYPERELASTICITY),
-        ],
-        required=True,
-    )
-    parser.add_argument(
-        "--dim",
-        choices=[2, 3],
-        type=int,
-        nargs="*",
-        help="Toplogical dimension on which the function spaces are to be defined.",
-        required=True,
-    )
-    parser.add_argument(
-        "--p_range",
-        type=int,
-        nargs=2,
-        help=(
-            "Operators corresponding to"
-            " polynomial degrees {X, X+1, ..., Y} are evaluated."
-        ),
-        metavar=("X", "Y"),
-        required=True,
-    )
-
-    args = parser.parse_args()
-
-    assert (
-        isinstance(args.dim, list)
-        and (args.op, list)
-        and isinstance(args.p_range, list)
-    )
-
-    p_lo, p_hi = args.p_range
-    assert isinstance(p_lo, int) and isinstance(p_hi, int)
-
-    main(
-        operators=[name_to_op(o) for o in args.op],
-        dims=args.dim,
-        p_lo=p_lo,
-        p_hi=p_hi,
-    )
+    main()
