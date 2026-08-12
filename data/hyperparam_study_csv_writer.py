@@ -1,9 +1,50 @@
 import csv
 
 import numpy as np
+import pandas as pd
+
+from ufltogpu_artifacts.constants import flops_per_cell
+from ufltogpu_artifacts.core import Op, get_num_cells
 
 
-default_hyperparams_h200 = np.array([4160, 9407, 9730])
+h200_rankings_df = pd.read_csv("h200_rankings.csv", index_col=0)
+titanv_rankings_df = pd.read_csv("titanv_rankings.csv", index_col=0)
+h200_times = h200_rankings_df.loc[
+    [
+        "Op.MASS.2D.P3",
+        "Op.HYPERELASTICITY.2D.P6",
+        "Op.ELASTICITY.3D.P4",
+    ],
+    "Rank-1":,
+].to_numpy().T
+titanv_times = titanv_rankings_df.loc[
+    [
+        "Op.MASS.2D.P3",
+        "Op.HYPERELASTICITY.2D.P6",
+        "Op.ELASTICITY.3D.P4",
+    ],
+    "Rank-1":,
+].to_numpy().T
+h200_ncells = np.array(
+    [get_num_cells(2, 1280), get_num_cells(2, 1280), get_num_cells(3, 56)]
+)
+titanv_ncells = np.array(
+    [get_num_cells(2, 512), get_num_cells(2, 512), get_num_cells(3, 32)]
+)
+flops_per_cell = np.array(
+    [
+        flops_per_cell[Op.MASS, 2, 3],
+        flops_per_cell[Op.HYPERELASTICITY, 2, 6],
+        flops_per_cell[Op.ELASTICITY, 3, 4],
+    ]
+)
+h200_gflops = 1e-9 * flops_per_cell * h200_ncells / h200_times
+titanv_gflops = 1e-9 * flops_per_cell * titanv_ncells / titanv_times
+
+bs = [1, 3, 5, 20, 50, 70]
+
+
+default_hyperparams_h200 = np.max(h200_gflops[:9], axis=0)
 vary_hyperparams_h200 = np.array([
     # eta_alias_min
     [4128.7, 8684.9, 6506.3],
@@ -24,9 +65,11 @@ vary_hyperparams_h200 = np.array([
     [4125.2, 9407.2, 10417.1],
     [4126.7, 9403.3, 9736.2],
     [4128, 8691.6, 9729.4],
+    # Top-bs
+    *[np.max(h200_gflops[:b], axis=0) for b in bs]
 ])
 
-default_hyperparams_titanv = np.array([1158.6, 3185.7, 3119])
+default_hyperparams_titanv = np.max(titanv_gflops[:9], axis=0)
 vary_hyperparams_titanv = np.array([
     # eta_alias_min
     [1153.4, 3080.7, 2399.9],
@@ -47,6 +90,8 @@ vary_hyperparams_titanv = np.array([
     [1145.3, 4057.1, 3463.3],
     [1160.2, 3183, 3090.8],
     [1146.8, 3084.1, 2492.7],
+    # Top-bs
+    *[np.max(titanv_gflops[:b], axis=0) for b in bs]
 ])
 
 ratio_titanv = vary_hyperparams_titanv / default_hyperparams_titanv
@@ -74,6 +119,7 @@ configurations = [
     "WG_MAX=128",
     "WG_MAX=256",
     "WG_MAX=512",
+    *[f"{b=}" for b in bs]
 ]
 
 for filename, ratios in (
