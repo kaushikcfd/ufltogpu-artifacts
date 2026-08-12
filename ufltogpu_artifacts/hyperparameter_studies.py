@@ -29,6 +29,16 @@ CONFIGS: Sequence[tuple[Op, int, int]] = (
     (Op.ELASTICITY, 3, 4),
 )
 
+BASELINE_ETA_ALIAS_MAX = 0.8
+BASELINE_ETA_SIMD_MAX = 0.97
+BASELINE_NcNwi_MAX = 256
+
+
+def reset_auto_tiling_baseline() -> None:
+    pyop2.transforms.auto_tiling.ETA_ALIAS_MAX = BASELINE_ETA_ALIAS_MAX
+    pyop2.transforms.auto_tiling.ETA_SIMD_MAX = BASELINE_ETA_SIMD_MAX
+    pyop2.transforms.auto_tiling.NcNwi_MAX = BASELINE_NcNwi_MAX
+
 
 def firedrake_clean() -> None:
     import os
@@ -65,6 +75,7 @@ def main() -> None:
 
     perf_table: dict[str, dict[float, str]] = {}
 
+    reset_auto_tiling_baseline()
     for wg_max in wg_max_values:
         firedrake_clean()
         pyop2.transforms.auto_tiling.NcNwi_MAX = wg_max
@@ -96,6 +107,7 @@ def main() -> None:
 
     perf_table: dict[str, dict[float, str]] = {}
 
+    reset_auto_tiling_baseline()
     for eta_simd_max in eta_simd_max_values:
         firedrake_clean()
         pyop2.transforms.auto_tiling.ETA_SIMD_MAX = eta_simd_max
@@ -127,6 +139,7 @@ def main() -> None:
 
     perf_table: dict[str, dict[float, str]] = {}
 
+    reset_auto_tiling_baseline()
     for eta_alias_max in eta_alias_max_values:
         firedrake_clean()
         pyop2.transforms.auto_tiling.ETA_ALIAS_MAX = eta_alias_max
