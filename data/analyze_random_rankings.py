@@ -75,7 +75,7 @@ def main() -> None:
         "laplace": lambda k: k.op == Op.LAPLACE,
         "helmholtz": lambda k: k.op == Op.HELMHOLTZ,
         "elasticity": lambda k: k.op == Op.ELASTICITY,
-        "hyperlelasiticity": lambda k: k.op == Op.HYPERELASTICITY,
+        "hyperelasticity": lambda k: k.op == Op.HYPERELASTICITY,
     }
     spearman_table: list[list[str]] = []
     headers = ["", *cols]

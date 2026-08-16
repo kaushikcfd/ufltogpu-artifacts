@@ -92,7 +92,7 @@ def main() -> None:
         "laplace": lambda row: _parse_test_case(row).op == Op.LAPLACE,
         "helmholtz": lambda row: _parse_test_case(row).op == Op.HELMHOLTZ,
         "elasticity": lambda row: _parse_test_case(row).op == Op.ELASTICITY,
-        "hyperlelasiticity": lambda row: _parse_test_case(row).op == Op.HYPERELASTICITY,
+        "hyperelasticity": lambda row: _parse_test_case(row).op == Op.HYPERELASTICITY,
     }
 
     for row, rowfilter in rows.items():
