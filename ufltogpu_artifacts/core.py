@@ -78,17 +78,32 @@ def get_active_cuda_device_and_version() -> tuple[Device, str]:
     )
 
 
-def get_nel1d_for_reported_data(dim: int) -> int:
+def get_nel1d_for_reported_data(dim: int, device: Device | None = None) -> int:
     """
     Returns the number of elements along each dimension of a unit
     *dim*-dimension hypercube for the reported data in the paper.
+
+    If *device* is not provided, the currently active CUDA device is used.
     """
-    if dim == 2:
-        return 512
-    elif dim == 3:
-        return 32
+    if device is None:
+        device, _ = get_active_cuda_device_and_version()
+
+    if device in (Device.K40M, Device.K40C, Device.TITANV):
+        if dim == 2:
+            return 512
+        elif dim == 3:
+            return 32
+        else:
+            raise NotImplementedError
+    elif device == Device.H200NVL:
+        if dim == 2:
+            return 1280
+        elif dim == 3:
+            return 56
+        else:
+            raise NotImplementedError
     else:
-        raise NotImplementedError
+        raise ValueError(f"Unknown device {device_name(device)}.")
 
 
 def get_num_cells(dim: int, nel_1d: int) -> int:

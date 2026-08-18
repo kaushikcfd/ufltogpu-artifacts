@@ -50,7 +50,7 @@ def _test_main():
     for op in Op:
         for dim in [2, 3]:
             for p in range(1, dim_to_p_hi[dim] + 1):
-                num_cells = get_num_cells(dim, get_nel1d_for_reported_data(dim))
+                num_cells = get_num_cells(dim, get_nel1d_for_reported_data(dim, device))
                 roofline_gflops = get_roofline_gflops(op, dim, p, num_cells, device)
                 dummy_gflops = (0.4 * rng.random() + 0.3) * roofline_gflops
                 record_gflops(
@@ -116,7 +116,7 @@ def main(
                 op,
                 2,
                 p,
-                get_num_cells(2, get_nel1d_for_reported_data(2)),
+                get_num_cells(2, get_nel1d_for_reported_data(2, device)),
             )
             for p in range(p_lo_2d, p_hi_2d + 1)
         ] + [
@@ -126,18 +126,18 @@ def main(
                 op,
                 3,
                 p,
-                get_num_cells(3, get_nel1d_for_reported_data(3)),
+                get_num_cells(3, get_nel1d_for_reported_data(3, device)),
             )
             for p in range(p_lo_3d, p_hi_3d + 1)
         ]
         roofline_flops = [
             get_roofline_gflops(
-                op, 2, p, get_num_cells(2, get_nel1d_for_reported_data(2)), device
+                op, 2, p, get_num_cells(2, get_nel1d_for_reported_data(2, device)), device
             )
             for p in range(p_lo_2d, p_hi_2d + 1)
         ] + [
             get_roofline_gflops(
-                op, 3, p, get_num_cells(3, get_nel1d_for_reported_data(3)), device
+                op, 3, p, get_num_cells(3, get_nel1d_for_reported_data(3, device)), device
             )
             for p in range(p_lo_3d, p_hi_3d + 1)
         ]

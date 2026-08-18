@@ -130,7 +130,7 @@ def main(
     device, cuda_sdk_version = get_active_cuda_device_and_version()
 
     for dim in dims:
-        nel_1d = get_nel1d_for_reported_data(dim)
+        nel_1d = get_nel1d_for_reported_data(dim, device)
         num_cells = get_num_cells(dim, nel_1d)
         for op in operators:
             for p in range(p_lo, p_hi + 1):
