@@ -1,19 +1,21 @@
 diff --git a/pyop2/transforms/auto_tiling.py b/pyop2/transforms/auto_tiling.py
-index 96201ce2..6865fc56 100644
+index 96201ce2..5c40b706 100644
 --- a/pyop2/transforms/auto_tiling.py
 +++ b/pyop2/transforms/auto_tiling.py
-@@ -19,6 +19,10 @@ from loopy.symbolic import (
+@@ -19,6 +19,12 @@ from loopy.symbolic import (
  import pymbolic.primitives as prim
  import islpy as isl
  
 +ETA_SIMD_MAX = 0.97
 +NcNwi_MAX = 256
 +ETA_ALIAS_MAX = 0.8
++NUM_TILING_CANDIDATES = 10
++SCPWI_W = 32
 +
  
  class AutotilingFallback(Warning):
      """
-@@ -1792,7 +1796,7 @@ class ParametricTilingCandidateGenerator:
+@@ -1792,7 +1798,7 @@ class ParametricTilingCandidateGenerator:
  
          for nc in range(1, 70):
              for nt in range(1, 20):
@@ -22,7 +24,7 @@ index 96201ce2..6865fc56 100644
                      if nt in threads_to_cells:
                          threads_to_cells[nt].append(nc)
                      else:
-@@ -1826,7 +1830,7 @@ class ParametricTilingCandidateGenerator:
+@@ -1826,7 +1832,7 @@ class ParametricTilingCandidateGenerator:
                              current_tile = tuple(
                                  (T_e_r, T_e_c) for T_e_c in T_e_cs
                              ) + ((T_q_r, T_q_c),)
@@ -31,13 +33,31 @@ index 96201ce2..6865fc56 100644
                                  tiles.append((quad_tile_len, current_tile))
  
          params = []
-@@ -2029,6 +2033,9 @@ def autotuned_tiling(
+@@ -1865,7 +1871,7 @@ def get_transform_candidates(
+     fem_kernel: lp.TranslationUnit,
+ ) -> Tuple[TransformCandidate, ...]:
+     try:
+-        return ParametricTilingCandidateGenerator(fem_kernel, 10)() + (SWIPC(),)
++        return ParametricTilingCandidateGenerator(fem_kernel, NUM_TILING_CANDIDATES)() + (SWIPC(),)
+     except MetadataMismatchError:
+         # fallback to no auto-tiling
+         import warnings
+@@ -1880,7 +1886,7 @@ def _transform_kernel_with_candidate(
+     if isinstance(candidate, SWIPC):
+         from pyop2.transforms.snpt import split_n_across_workgroups
+ 
+-        return split_n_across_workgroups(kernel, 32)
++        return split_n_across_workgroups(kernel, SCPWI_W)
+     elif isinstance(candidate, ParametricTiling):
+         return tiled_transform(kernel, candidate)
+     else:
+@@ -2029,6 +2035,9 @@ def autotuned_tiling(
          set of arguments to operate. It is important to note that the
          transformed kernel will be valid for other arguments as well.
      """
-+    print(
-+        f"Running autotuning with {ETA_ALIAS_MAX = }, {ETA_SIMD_MAX = }, {NcNwi_MAX = }."
-+    )
++    # print(
++    #     f"Running autotuning with {ETA_ALIAS_MAX = }, {ETA_SIMD_MAX = }, {NcNwi_MAX = }."
++    # )
      # Step.0: Preprocessing to simply transform implementation
      t_unit = _preprocess_tunit_for_autotiling(t_unit)
  
